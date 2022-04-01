@@ -22,6 +22,7 @@
  #include <config.h>
  #include <udjat/defs.h>
  #include <udjat/module.h>
+ #include <udjat/factory.h>
  #include <udjat/sqlite/database.h>
  #include <string>
 
@@ -29,7 +30,7 @@
 
 	namespace SQLite {
 
-		class UDJAT_PRIVATE Module : public Udjat::Module, private Database {
+		class UDJAT_PRIVATE Module : public Udjat::Module, public Udjat::Factory, private Database {
 		public:
 			Module();
 			Module(const pugi::xml_node &node);

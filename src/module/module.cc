@@ -25,6 +25,7 @@
  #include <udjat/tools/application.h>
  #include <udjat/moduleinfo.h>
  #include <udjat/sqlite/database.h>
+ #include <udjat/module.h>
 
  using namespace std;
 
@@ -47,15 +48,19 @@
 	/// @brief Create module from configuration file.
 	static const Udjat::ModuleInfo moduleinfo{"SQLite " SQLITE_VERSION " module"};
 
-	SQLite::Module::Module() : Udjat::Module("sqlite",moduleinfo) {
+	SQLite::Module::Module() : Udjat::Module("sqlite",moduleinfo), Udjat::Factory("sql",moduleinfo) {
 
 		// Open SQLite database
+#ifdef DEBUG
+		open(Application::DataFile(getAttribute("dbname","./sqlite.db").c_str()).c_str());
+#else
 		open(Application::DataFile(getAttribute("dbname","sqlite.db").c_str()).c_str());
+#endif // DEBUG
 
 	}
 
 	/// @brief Create module from XML definition with fallback to configuration file.
-	SQLite::Module::Module(const pugi::xml_node &node) : Udjat::Module("sqlite",moduleinfo) {
+	SQLite::Module::Module(const pugi::xml_node &node) : Udjat::Module("sqlite",moduleinfo), Udjat::Factory("sql",moduleinfo) {
 
 		// Open SQLite database
 		open(Application::DataFile(getAttribute(node,"dbname","sqlite.db").c_str()).c_str());

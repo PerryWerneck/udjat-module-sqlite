@@ -37,6 +37,8 @@
 config.h
 stamp-h1
 *.layout
+.bin
+.obj
 
 # Misc
 ABOUT-NLS
@@ -50,4 +52,6 @@ intl
 m4
 po
 scripts
+*.db
+*.suppression
 
