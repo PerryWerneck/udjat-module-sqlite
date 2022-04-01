@@ -30,3 +30,23 @@
 *.exe
 *.out
 *.app
+
+# Backup and temporaries
+*~
+*.bak	
+config.h
+stamp-h1
+
+# Misc
+ABOUT-NLS
+Makefile
+*.m4
+*.cache
+*.log
+*.status
+configure
+intl
+m4
+po
+scripts
+
