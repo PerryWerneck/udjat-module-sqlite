@@ -33,9 +33,10 @@
 
 # Backup and temporaries
 *~
-*.bak	
+*.bak
 config.h
 stamp-h1
+*.layout
 
 # Misc
 ABOUT-NLS

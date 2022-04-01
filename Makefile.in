@@ -5,6 +5,7 @@ PACKAGE_NAME=@PACKAGE_NAME@
 SONAME=@SONAME@
 
 MODULE_SOURCES= \
+	$(wildcard src/library/*.cc) \
 	$(wildcard src/module/*.cc) \
 	$(wildcard src/module/os/@OSNAME@/*.cc) \
 	$(wildcard src/module/os/@OSNAME@/*.rc)
