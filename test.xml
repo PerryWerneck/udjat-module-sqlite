@@ -5,6 +5,14 @@
 	<module name='civetweb' required='no' />
 	<module name='information' required='no' />
 	
+	<sql type='init'>
+		create table if not exists alerts (id integer primary key, inserted timestamp default CURRENT_TIMESTAMP, url text, action text, payload text)
+	</sql>
+	
+	<sql name='sqlite' type='url-scheme' args='url,action,payload'>
+		insert into alerts (url,action,payload) values (?,?,?)
+	</sql>
+	
 </config>
 
 

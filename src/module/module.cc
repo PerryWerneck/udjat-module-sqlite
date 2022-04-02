@@ -17,15 +17,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+ #include <config.h>
  #include "private.h"
  #include <pugixml.hpp>
  #include <udjat/tools/object.h>
  #include <udjat/tools/string.h>
  #include <udjat/tools/configuration.h>
  #include <udjat/tools/application.h>
+ #include <udjat/tools/protocol.h>
  #include <udjat/moduleinfo.h>
  #include <udjat/sqlite/database.h>
+ #include <udjat/tools/quark.h>
  #include <udjat/module.h>
+ #include <udjat/sqlite/sql.h>
 
  using namespace std;
 
@@ -68,6 +72,62 @@
 	}
 
 	SQLite::Module::~Module() {
+		for(auto worker : workers) {
+			delete worker;
+		}
+	}
+
+	void SQLite::Module::push_back(DynamicWorker *worker) const {
+		const_cast<SQLite::Module *>(this)->workers.push_back(worker);
+	}
+
+	bool SQLite::Module::push_back(const pugi::xml_node &node) const {
+
+		Database &database = Database::getInstance();
+
+		String sql{node.child_value()};
+		sql.strip();
+		sql.expand(node);
+
+#ifdef DEBUG
+		cout << ":\n" << sql << endl;
+#endif // DEBUG
+
+		const char *type = node.attribute("type").as_string();
+		if(!(type && *type)) {
+			throw runtime_error("The required 'type' attribute is not available");
+		}
+
+		if(!strcasecmp(type,"init")) {
+			//
+			// Execute SQL on initialization.
+			//
+			database.exec(sql.c_str());
+			return true;
+		}
+
+		if(!strcasecmp(type,"url-scheme")) {
+			//
+			// Register SQL as protocol handler.
+			//
+			class Scheme : public Udjat::Protocol, public SQL, public DynamicWorker {
+			public:
+				Scheme(const char *sql, const pugi::xml_node &node)
+					: Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo),SQL(sql,node.attribute("args").as_string()) {
+				}
+
+				std::shared_ptr<Worker> WorkerFactory() const override {
+					throw runtime_error("Not implemented");
+				}
+
+			};
+
+			push_back(new Scheme(sql.c_str(),node));
+			return true;
+		}
+
+
+		return false;
 	}
 
  }

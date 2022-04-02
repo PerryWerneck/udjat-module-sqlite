@@ -17,47 +17,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
- #pragma once
-
- #include <config.h>
- #include <udjat/defs.h>
- #include <udjat/module.h>
- #include <udjat/factory.h>
- #include <udjat/sqlite/database.h>
- #include <string>
- #include <list>
+ #include <udjat/tools/quark.h>
 
  namespace Udjat {
 
 	namespace SQLite {
 
-		class UDJAT_PRIVATE Module : public Udjat::Module, public Udjat::Factory, private Database {
+		class UDJAT_API SQL {
 		private:
-
-			class DynamicWorker {
-			public:
-				constexpr DynamicWorker() {
-				}
-
-				virtual ~DynamicWorker() {
-				}
-
-			};
-
-			std::list<DynamicWorker *> workers;
-
-			void push_back(DynamicWorker *worker) const;
+			Quark query;
+			Quark args;
 
 		public:
-			Module();
-			Module(const pugi::xml_node &node);
-			virtual ~Module();
+			SQL(const char *query, const char *args);
+			~SQL();
 
-			bool push_back(const pugi::xml_node &node) const override;
 		};
 
-
 	}
-
 
  }
