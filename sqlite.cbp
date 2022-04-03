@@ -36,6 +36,7 @@
 		<Unit filename="src/include/udjat/sqlite/database.h" />
 		<Unit filename="src/include/udjat/sqlite/sql.h" />
 		<Unit filename="src/library/database.cc" />
+		<Unit filename="src/library/sql.cc" />
 		<Unit filename="src/module/init.cc" />
 		<Unit filename="src/module/module.cc" />
 		<Unit filename="src/module/private.h" />

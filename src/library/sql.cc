@@ -17,27 +17,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
- #include <udjat/defs.h>
- #include <udjat/tools/protocol.h>
+ #include <config.h>
+ #include <udjat/sqlite/sql.h>
+ #include <udjat/tools/quark.h>
+ #include <udjat/sqlite/database.h>
 
  namespace Udjat {
 
-	namespace SQLite {
+	SQLite::SQL::SQL(const char *q, const char *a) : query(Quark(q).c_str()), args(Quark(a).c_str()) {
+	}
 
-		class UDJAT_API SQL {
-		protected:
-			const char * query;
-			const char * args;
+	SQLite::SQL::~SQL() {
+	}
 
-		public:
-			SQL(const char *query, const char *args);
-			~SQL();
-
-			/// @brief Execute query, no arguments.
-			void exec() const;
-
-		};
-
+	void SQLite::SQL::exec() const {
+		Database::getInstance().exec(query);
 	}
 
  }

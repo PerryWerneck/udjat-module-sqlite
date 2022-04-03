@@ -116,8 +116,29 @@
 					: Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo),SQL(sql,node.attribute("args").as_string()) {
 				}
 
-				std::shared_ptr<Worker> WorkerFactory() const override {
-					throw runtime_error("Not implemented");
+				std::shared_ptr<Protocol::Worker> WorkerFactory() const override {
+
+					class Worker : public Protocol::Worker {
+					private:
+						const char * query;
+						const char * args;
+
+					public:
+						Worker(const char *q, const char *a) : query(q),args(a) {
+						}
+
+						virtual ~Worker() {
+						}
+
+						String get(const std::function<bool(double current, double total)> &progress) override {
+
+							// TODO: Implementar
+							return "";
+						}
+
+					};
+
+					return make_shared<Worker>(query,args);
 				}
 
 			};
