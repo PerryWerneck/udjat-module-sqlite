@@ -21,6 +21,7 @@
 
  #include <udjat/tools/systemservice.h>
  #include <udjat/tools/application.h>
+ #include <udjat/tools/http/client.h>
  #include <udjat/agent.h>
  #include <udjat/factory.h>
  #include <udjat/module.h>
@@ -60,6 +61,11 @@ int main(int argc, char **argv) {
 					cout << "http://localhost:8989/api/1.0/agent/" << agent->name() << ".xml" << endl;
 				}
 			}
+
+			cout << "------------------------------------------------" << endl;
+			HTTP::Client("sqlite+http://localhost").get();
+			cout << "------------------------------------------------" << endl;
+
 
 		}
 

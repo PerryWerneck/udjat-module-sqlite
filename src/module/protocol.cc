@@ -100,6 +100,8 @@
 					nullptr
 				);
 
+				stmt.exec();
+
 				// Force as complete.
 				progress(1,1);
 				return "";
