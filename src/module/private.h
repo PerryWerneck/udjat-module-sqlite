@@ -78,7 +78,7 @@
 			time_t retry_delay = 1;
 
 			/// @brief Sending queued URLs.
-			void send() const noexcept;
+			void send() const;
 
 		public:
 			Protocol(const pugi::xml_node &node);

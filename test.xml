@@ -2,8 +2,11 @@
 
 <config>
 
+	<module name='http' required='no' />
+	<!--
 	<module name='civetweb' required='no' />
 	<module name='information' required='no' />
+	-->
 	
 	<sql name='sqlite' type='url-scheme' retry-interval='60'>
 	
