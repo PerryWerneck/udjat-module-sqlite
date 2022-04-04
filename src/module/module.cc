@@ -24,6 +24,7 @@
  #include <udjat/tools/string.h>
  #include <udjat/tools/configuration.h>
  #include <udjat/tools/application.h>
+ #include <udjat/tools/object.h>
  #include <udjat/sqlite/database.h>
  #include <udjat/tools/quark.h>
  #include <udjat/module.h>

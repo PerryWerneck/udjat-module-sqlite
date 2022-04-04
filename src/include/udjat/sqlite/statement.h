@@ -33,14 +33,14 @@
 			Database &database;
 			sqlite3_stmt *stmt;
 
-			int step();
-
 		public:
 			Statement(const char *sql);
 			~Statement();
 
 			void reset();
 			void exec();
+
+			int step();
 
 			void get(int column, int64_t &value);
 			void get(int column, std::string &value);

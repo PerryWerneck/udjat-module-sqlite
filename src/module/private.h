@@ -67,6 +67,18 @@
 			const char *ins;
 			const char *del;
 			const char *select;
+			bool busy = false;
+
+			struct {
+				time_t interval = 86400;
+				time_t delay = 1;
+				time_t when_busy = 14400;
+			} retry;
+
+			time_t retry_delay = 1;
+
+			/// @brief Sending queued URLs.
+			void send() const noexcept;
 
 		public:
 			Protocol(const pugi::xml_node &node);
