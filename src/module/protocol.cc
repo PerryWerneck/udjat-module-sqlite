@@ -23,6 +23,7 @@
  #include <udjat/tools/quark.h>
  #include <udjat/moduleinfo.h>
  #include <udjat/sqlite/database.h>
+ #include <udjat/sqlite/statement.h>
  #include <string>
  #include "private.h"
 
@@ -64,7 +65,51 @@
 	}
 
 	std::shared_ptr<Protocol::Worker> SQLite::Protocol::WorkerFactory() const {
+
+		class Worker : public Udjat::Protocol::Worker {
+		private:
+			const char *sql;
+
+		public:
+			Worker(const char *s) : sql(s) {
+			}
+
+			virtual ~Worker() {
+			}
+
+			String get(const std::function<bool(double current, double total)> &progress) override {
+
+#ifdef DEBUG
+				cout << "Inserting " << method() << " '" << url() << "'" << endl;
+#endif // DEBUG
+
+				progress(0,0);
+
+				// Get SQL
+				String sql{this->sql};
+				sql.expand(true,true);
+
+				// Prepare.
+				Statement stmt(sql.c_str());
+
+				// Arguments: URL, VERB, Payload
+				stmt.bind(
+					url().c_str(),
+					std::to_string(method()),
+					payload(),
+					nullptr
+				);
+
+				// Force as complete.
+				progress(1,1);
+				return "";
+			}
+
+		};
+
+		return make_shared<Worker>(ins);
 	}
+
 
  }
 

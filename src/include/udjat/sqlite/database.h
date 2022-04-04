@@ -27,11 +27,17 @@
 
 	namespace SQLite {
 
+		class Statement;
+
 		/// @brief SQLite database.
 		class UDJAT_API Database {
 		private:
+			friend class Statement;
+
 			sqlite3 *db = NULL;
 			std::mutex guard;
+
+			void check(int rc);
 
 		protected:
 			static Database * instance;
@@ -46,6 +52,8 @@
 			static Database & getInstance();
 
 			void exec(const char *sql);
+
+			sqlite3_stmt * prepare(const char *sql);
 
 		};
 

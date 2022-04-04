@@ -5,7 +5,7 @@
 	<module name='civetweb' required='no' />
 	<module name='information' required='no' />
 	
-	<sql name='sqlite' type='url-scheme'>
+	<sql name='sqlite' type='url-scheme' retry-interval='60'>
 	
 		<init>
 			create table if not exists alerts (id integer primary key, inserted timestamp default CURRENT_TIMESTAMP, url text, action text, payload text)

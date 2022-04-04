@@ -20,25 +20,41 @@
  #pragma once
 
  #include <udjat/defs.h>
+ #include <sqlite3.h>
+ #include <udjat/sqlite/database.h>
+ #include <string>
 
  namespace Udjat {
 
 	namespace SQLite {
 
-		class UDJAT_API SQL {
-		protected:
-			const char * query;
-			const char * args;
+		class UDJAT_API Statement {
+		private:
+			Database &database;
+			sqlite3_stmt *stmt;
+
+			int step();
 
 		public:
-			SQL(const char *query, const char *args);
-			~SQL();
+			Statement(const char *sql);
+			~Statement();
 
-			/// @brief Execute query, no arguments.
-			void exec() const;
+			void reset();
+			void exec();
+
+			void get(int column, int64_t &value);
+			void get(int column, std::string &value);
+
+			Statement & bind(int column, const char *value);
+			Statement & bind(int column, const int64_t value);
+
+			/// @brief Bind multiple columns.
+			Statement & bind(const char *arg,...) UDJAT_GNUC_NULL_TERMINATED;
 
 		};
+
 
 	}
 
  }
+

@@ -101,11 +101,17 @@
 
 		lock_guard<std::mutex> lock(guard);
 		if(sqlite3_exec(db,sql,NULL,NULL,&errMsg) != SQLITE_OK) {
-				string message{errMsg};
-				sqlite3_free(errMsg);
-				throw runtime_error(message);
+			string message{errMsg};
+			sqlite3_free(errMsg);
+			throw runtime_error(message);
 		}
 
+	}
+
+	void SQLite::Database::check(int rc) {
+		if (rc != SQLITE_OK && rc != SQLITE_DONE) {
+			throw runtime_error(sqlite3_errmsg(db));
+		}
 	}
 
 
