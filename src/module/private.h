@@ -24,15 +24,20 @@
  #include <udjat/module.h>
  #include <udjat/factory.h>
  #include <udjat/sqlite/database.h>
+ #include <udjat/sqlite/sql.h>
+ #include <udjat/tools/protocol.h>
  #include <string>
  #include <list>
+ #include <udjat/moduleinfo.h>
 
  namespace Udjat {
 
 	namespace SQLite {
 
 		class UDJAT_PRIVATE Module : public Udjat::Module, public Udjat::Factory, private Database {
-		private:
+		public:
+
+			static const ModuleInfo moduleinfo;
 
 			class DynamicWorker {
 			public:
@@ -44,8 +49,9 @@
 
 			};
 
-			std::list<DynamicWorker *> workers;
+		private:
 
+			std::list<DynamicWorker *> workers;
 			void push_back(DynamicWorker *worker) const;
 
 		public:
@@ -54,6 +60,20 @@
 			virtual ~Module();
 
 			bool push_back(const pugi::xml_node &node) const override;
+		};
+
+		class UDJAT_PRIVATE Protocol : public Udjat::Protocol, public Module::DynamicWorker {
+		private:
+			const char *ins;
+			const char *del;
+			const char *select;
+
+		public:
+			Protocol(const pugi::xml_node &node);
+			virtual ~Protocol();
+
+			std::shared_ptr<Protocol::Worker> WorkerFactory() const override;
+
 		};
 
 

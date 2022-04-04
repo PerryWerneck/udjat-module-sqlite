@@ -24,8 +24,6 @@
  #include <udjat/tools/string.h>
  #include <udjat/tools/configuration.h>
  #include <udjat/tools/application.h>
- #include <udjat/tools/protocol.h>
- #include <udjat/moduleinfo.h>
  #include <udjat/sqlite/database.h>
  #include <udjat/tools/quark.h>
  #include <udjat/module.h>
@@ -50,7 +48,7 @@
 	}
 
 	/// @brief Create module from configuration file.
-	static const Udjat::ModuleInfo moduleinfo{"SQLite " SQLITE_VERSION " module"};
+	const Udjat::ModuleInfo SQLite::Module::moduleinfo{"SQLite " SQLITE_VERSION " module"};
 
 	SQLite::Module::Module() : Udjat::Module("sqlite",moduleinfo), Udjat::Factory("sql",moduleinfo) {
 
@@ -83,16 +81,6 @@
 
 	bool SQLite::Module::push_back(const pugi::xml_node &node) const {
 
-		Database &database = Database::getInstance();
-
-		String sql{node.child_value()};
-		sql.strip();
-		sql.expand(node);
-
-#ifdef DEBUG
-		cout << ":\n" << sql << endl;
-#endif // DEBUG
-
 		const char *type = node.attribute("type").as_string();
 		if(!(type && *type)) {
 			throw runtime_error("The required 'type' attribute is not available");
@@ -102,7 +90,11 @@
 			//
 			// Execute SQL on initialization.
 			//
-			database.exec(sql.c_str());
+			String sql{node.child_value()};
+			sql.strip();
+			sql.expand(node);
+
+			Database::getInstance().exec(sql.c_str());
 			return true;
 		}
 
@@ -110,40 +102,7 @@
 			//
 			// Register SQL as protocol handler.
 			//
-			class Scheme : public Udjat::Protocol, public SQL, public DynamicWorker {
-			public:
-				Scheme(const char *sql, const pugi::xml_node &node)
-					: Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo),SQL(sql,node.attribute("args").as_string()) {
-				}
-
-				std::shared_ptr<Protocol::Worker> WorkerFactory() const override {
-
-					class Worker : public Protocol::Worker {
-					private:
-						const char * query;
-						const char * args;
-
-					public:
-						Worker(const char *q, const char *a) : query(q),args(a) {
-						}
-
-						virtual ~Worker() {
-						}
-
-						String get(const std::function<bool(double current, double total)> &progress) override {
-
-							// TODO: Implementar
-							return "";
-						}
-
-					};
-
-					return make_shared<Worker>(query,args);
-				}
-
-			};
-
-			push_back(new Scheme(sql.c_str(),node));
+			push_back(new SQLite::Protocol(node));
 			return true;
 		}
 
