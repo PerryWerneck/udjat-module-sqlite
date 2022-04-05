@@ -80,6 +80,10 @@
 							warning() << "Unexpected error while sending queued requests" << endl;
 
 						}
+
+#ifdef DEBUG
+						cout << "Retry in " << (retry.interval /1000) << " seconds " << endl;
+#endif // DEBUG
 						MainLoop::getInstance().reset(this,retry.interval);
 						busy = false;
 					});
