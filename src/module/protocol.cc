@@ -59,7 +59,7 @@
 
 		if(retry.interval) {
 
-			Udjat::Protocol::info() << "URL retry timer set to " << retry.interval << " segundos" << endl;
+			Udjat::Protocol::info() << "URL retry timer set to " << (retry.interval/1000) << " seconds" << endl;
 
 			MainLoop::getInstance().insert(this, retry.interval, [this]() {
 
@@ -67,7 +67,6 @@
 				if(!busy) {
 					busy = true;
 					ThreadPool::getInstance().push([this](){
-						cout << "------- Begin retry" << endl;
 						try {
 
 							send();
@@ -83,7 +82,6 @@
 						}
 						MainLoop::getInstance().reset(this,retry.interval);
 						busy = false;
-						cout << "------- End retry" << endl;
 					});
 				}
 
