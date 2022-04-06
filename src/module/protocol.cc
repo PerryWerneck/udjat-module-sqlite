@@ -180,9 +180,9 @@
 
 			String get(const std::function<bool(double current, double total)> &progress) override {
 
-#ifdef DEBUG
-				cout << "Inserting " << method() << " '" << url() << "'" << endl;
-#endif // DEBUG
+//#ifdef DEBUG
+//				cout << "Inserting " << method() << " '" << url() << "'" << endl;
+//#endif // DEBUG
 
 				progress(0,0);
 
