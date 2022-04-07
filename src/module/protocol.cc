@@ -27,6 +27,7 @@
  #include <udjat/sqlite/statement.h>
  #include <udjat/tools/mainloop.h>
  #include <udjat/tools/threadpool.h>
+ #include <udjat/tools/timestamp.h>
  #include <string>
 
 #ifndef _WIN32
@@ -81,9 +82,8 @@
 
 						}
 
-#ifdef DEBUG
-						cout << "Retry in " << (retry.interval /1000) << " seconds " << endl;
-#endif // DEBUG
+						cout << "Scheduling retry to " << TimeStamp(time(0)+(retry.interval /1000)) << endl;
+
 						MainLoop::getInstance().reset(this,retry.interval);
 						busy = false;
 					});
