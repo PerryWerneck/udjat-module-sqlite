@@ -28,6 +28,10 @@
 			delete from alerts where id=?
 		</delete>
 
+		<pending>
+			select count (*) from alerts
+		</pending>
+
 	</sql>
 	
 </config>

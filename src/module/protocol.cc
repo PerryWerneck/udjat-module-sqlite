@@ -40,10 +40,13 @@
 
  namespace Udjat {
 
-	static const char * child_value(const pugi::xml_node &node, const char *name) {
+	static const char * child_value(const pugi::xml_node &node, const char *name, bool required = true) {
 		auto child = node.child(name);
 		if(!child) {
-			throw runtime_error(string{"Required child '"} + name + "' not found");
+			if(required) {
+				throw runtime_error(string{"Required child '"} + name + "' not found");
+			}
+			return "";
 		}
 		String sql{child.child_value()};
 		sql.strip();
@@ -52,7 +55,7 @@
 		return Quark(sql).c_str();
 	}
 
-	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")) {
+	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
 
 		retry.delay = Object::getAttribute(node, "sqlite", "retry-delay", (unsigned int) retry.delay);
 		retry.interval = Object::getAttribute(node, "sqlite", "retry-interval", (unsigned int) retry.interval) * 1000;
@@ -68,6 +71,7 @@
 				if(!busy) {
 					busy = true;
 					ThreadPool::getInstance().push([this](){
+
 						try {
 
 							send();
@@ -106,6 +110,32 @@
 #endif // DEBUG
 
 			Database::getInstance().exec(sql.c_str());
+
+		}
+
+		if(pending && *pending) {
+
+			try {
+
+				Statement sql{pending};
+				sql.step();
+
+				int64_t pending_messages = 0;
+				sql.get(0,pending_messages);
+
+				if(!pending_messages) {
+					info() << "No pending requests" << endl;
+				} else if(pending_messages == 1) {
+					warning() << "1 pending request" << endl;
+				} else {
+					warning() << pending_messages << " pending requests" << endl;
+				}
+
+			} catch(const std::exception &e) {
+
+				error() << "Error '" << e.what() << "' counting pending requests" << endl;
+
+			}
 
 		}
 

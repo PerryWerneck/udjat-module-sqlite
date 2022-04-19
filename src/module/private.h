@@ -67,6 +67,8 @@
 			const char *ins;
 			const char *del;
 			const char *select;
+			const char *pending;
+
 			bool busy = false;
 
 			struct {
