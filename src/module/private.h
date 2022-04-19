@@ -26,6 +26,7 @@
  #include <udjat/sqlite/database.h>
  #include <udjat/sqlite/sql.h>
  #include <udjat/tools/protocol.h>
+ #include <udjat/state.h>
  #include <string>
  #include <list>
  #include <udjat/moduleinfo.h>
@@ -75,12 +76,17 @@
 				time_t interval = 86400;
 				time_t delay = 1;
 				time_t when_busy = 14400;
+				bool notify = false;
+				std::shared_ptr<Abstract::State> state;
 			} retry;
 
 			time_t retry_delay = 1;
 
 			/// @brief Sending queued URLs.
 			void send() const;
+
+			/// @brief Count pending requests.
+			int64_t count() const;
 
 		public:
 			Protocol(const pugi::xml_node &node);

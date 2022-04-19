@@ -28,6 +28,7 @@
  #include <udjat/tools/mainloop.h>
  #include <udjat/tools/threadpool.h>
  #include <udjat/tools/timestamp.h>
+ #include <udjat/tools/systemservice.h>
  #include <string>
 
 #ifndef _WIN32
@@ -55,11 +56,22 @@
 		return Quark(sql).c_str();
 	}
 
+	int64_t SQLite::Protocol::count() const {
+		int64_t pending_messages = 0;
+		if(pending && *pending) {
+			Statement sql{pending};
+			sql.step();
+			sql.get(0,pending_messages);
+		}
+		return pending_messages;
+	}
+
 	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
 
 		retry.delay = Object::getAttribute(node, "sqlite", "retry-delay", (unsigned int) retry.delay);
 		retry.interval = Object::getAttribute(node, "sqlite", "retry-interval", (unsigned int) retry.interval) * 1000;
 		retry.when_busy = Object::getAttribute(node, "sqlite", "retry-when-busy", (unsigned int) retry.when_busy) * 1000;
+		retry.notify = Object::getAttribute(node, "sqlite", "notify", pending && *pending);
 
 		if(retry.interval) {
 
@@ -86,8 +98,49 @@
 
 						}
 
-						cout << "Scheduling retry to " << TimeStamp(time(0)+(retry.interval /1000)) << endl;
+						// Do we need to change state?
+						if(retry.notify && pending && *pending) {
 
+							class SQLState : public Udjat::State<int64_t> {
+							private:
+								string msg;
+
+							public:
+								SQLState(int64_t value) : Udjat::State<int64_t>("SQLite",value,Level::ready) {
+
+									if(value == 0) {
+										msg = "No pending messages";
+									} else if(value == 1) {
+										msg = "1 pending message";
+									} else {
+										msg = std::to_string(value);
+										msg += " pending messages";
+									}
+
+									Object::properties.summary = msg.c_str();
+
+								}
+							};
+
+							auto systemservice = SystemService::getInstance();
+
+							if(systemservice) {
+
+								if(retry.state) {
+									systemservice->deactivate(retry.state);
+								}
+
+								retry.state = make_shared<SQLState>(count());
+
+								systemservice->activate(retry.state);
+
+							}
+
+						}
+
+
+						// Schedule next retry.
+						cout << "Scheduling retry to " << TimeStamp(time(0)+(retry.interval /1000)) << endl;
 						MainLoop::getInstance().reset(this,retry.interval);
 						busy = false;
 					});
@@ -117,11 +170,7 @@
 
 			try {
 
-				Statement sql{pending};
-				sql.step();
-
-				int64_t pending_messages = 0;
-				sql.get(0,pending_messages);
+				uint64_t pending_messages = count();
 
 				if(!pending_messages) {
 					info() << "No pending requests" << endl;
