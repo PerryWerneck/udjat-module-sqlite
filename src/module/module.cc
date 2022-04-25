@@ -71,14 +71,8 @@
 	}
 
 	SQLite::Module::~Module() {
-		for(auto worker : workers) {
-			delete worker;
-		}
 	}
 
-	void SQLite::Module::push_back(DynamicWorker *worker) const {
-		const_cast<SQLite::Module *>(this)->workers.push_back(worker);
-	}
 
 	bool SQLite::Module::push_back(const pugi::xml_node &node) const {
 
@@ -99,16 +93,27 @@
 			return true;
 		}
 
-		if(!strcasecmp(type,"url-scheme")) {
-			//
-			// Register SQL as protocol handler.
-			//
-			push_back(new SQLite::Protocol(node));
-			return true;
+		return false;
+
+	}
+
+	std::shared_ptr<Abstract::Agent> SQLite::Module::AgentFactory(const Abstract::Object &parent, const pugi::xml_node &node) const {
+
+		const char *type = node.attribute("type").as_string();
+		if(!(type && *type)) {
+			throw runtime_error("The required 'type' attribute is not available");
 		}
 
+		if(!strcasecmp(type,"url-scheme")) {
+			//
+			// Register SQL as protocol handler and queue status agent.
+			//
+			return make_shared<SQLite::Protocol>(node);
+		}
 
-		return false;
+		return Udjat::Factory::AgentFactory(parent,node);
+
 	}
+
 
  }
