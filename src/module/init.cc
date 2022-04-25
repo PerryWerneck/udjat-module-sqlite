@@ -21,9 +21,6 @@
 
  using namespace std;
 
-
- // const Udjat::ModuleInfo UserList::info{"SQLite module"};
-
  UDJAT_API Udjat::Module * udjat_module_init() {
 	return new Udjat::SQLite::Module();
  }

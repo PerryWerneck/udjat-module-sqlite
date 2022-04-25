@@ -50,6 +50,7 @@ Makefile
 configure
 intl
 m4
+*.rc
 po
 scripts
 *.db

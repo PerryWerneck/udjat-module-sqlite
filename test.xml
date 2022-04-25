@@ -2,8 +2,11 @@
 
 <config>
 
+	<module name='http' required='no' />
+	<!--
 	<module name='civetweb' required='no' />
 	<module name='information' required='no' />
+	-->
 	
 	<sql name='sqlite' type='url-scheme' retry-interval='60'>
 	
@@ -24,6 +27,10 @@
 		<delete>
 			delete from alerts where id=?
 		</delete>
+
+		<pending>
+			select count (*) from alerts
+		</pending>
 
 	</sql>
 	

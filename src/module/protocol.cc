@@ -27,6 +27,8 @@
  #include <udjat/sqlite/statement.h>
  #include <udjat/tools/mainloop.h>
  #include <udjat/tools/threadpool.h>
+ #include <udjat/tools/timestamp.h>
+ #include <udjat/tools/systemservice.h>
  #include <string>
 
 #ifndef _WIN32
@@ -39,10 +41,13 @@
 
  namespace Udjat {
 
-	static const char * child_value(const pugi::xml_node &node, const char *name) {
+	static const char * child_value(const pugi::xml_node &node, const char *name, bool required = true) {
 		auto child = node.child(name);
 		if(!child) {
-			throw runtime_error(string{"Required child '"} + name + "' not found");
+			if(required) {
+				throw runtime_error(string{"Required child '"} + name + "' not found");
+			}
+			return "";
 		}
 		String sql{child.child_value()};
 		sql.strip();
@@ -51,25 +56,92 @@
 		return Quark(sql).c_str();
 	}
 
-	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")) {
+	int64_t SQLite::Protocol::count() const {
+		int64_t pending_messages = 0;
+		if(pending && *pending) {
+			Statement sql{pending};
+			sql.step();
+			sql.get(0,pending_messages);
+		}
+		return pending_messages;
+	}
+
+	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
 
 		retry.delay = Object::getAttribute(node, "sqlite", "retry-delay", (unsigned int) retry.delay);
-		retry.interval = Object::getAttribute(node, "sqlite", "retry-interval", (unsigned int) retry.interval);
-		retry.when_busy = Object::getAttribute(node, "sqlite", "retry-when-busy", (unsigned int) retry.when_busy);
+		retry.interval = Object::getAttribute(node, "sqlite", "retry-interval", (unsigned int) retry.interval) * 1000;
+		retry.when_busy = Object::getAttribute(node, "sqlite", "retry-when-busy", (unsigned int) retry.when_busy) * 1000;
+		retry.notify = Object::getAttribute(node, "sqlite", "notify", pending && *pending);
 
 		if(retry.interval) {
 
-			Udjat::Protocol::info() << "URL retry timer set to " << retry.interval << " segundos" << endl;
+			Udjat::Protocol::info() << "URL retry timer set to " << (retry.interval/1000) << " seconds" << endl;
 
 			MainLoop::getInstance().insert(this, retry.interval, [this]() {
 
-				if(busy) {
-					MainLoop::getInstance().reset(this,retry.when_busy);
-				} else {
+				MainLoop::getInstance().reset(this,retry.when_busy);
+				if(!busy) {
 					busy = true;
-					MainLoop::getInstance().reset(this,retry.interval);
 					ThreadPool::getInstance().push([this](){
-						send();
+
+						try {
+
+							send();
+
+						} catch(const std::exception &e) {
+
+							warning() << "Error '" << e.what() << "' while sending queued requests" << endl;
+
+						} catch(...) {
+
+							warning() << "Unexpected error while sending queued requests" << endl;
+
+						}
+
+						// Do we need to change state?
+						if(retry.notify && pending && *pending) {
+
+							class SQLState : public Udjat::State<int64_t> {
+							private:
+								string msg;
+
+							public:
+								SQLState(int64_t value) : Udjat::State<int64_t>("SQLite",value,Level::ready) {
+
+									if(value == 0) {
+										msg = "No pending messages";
+									} else if(value == 1) {
+										msg = "1 pending message";
+									} else {
+										msg = std::to_string(value);
+										msg += " pending messages";
+									}
+
+									Object::properties.summary = msg.c_str();
+
+								}
+							};
+
+							auto systemservice = SystemService::getInstance();
+
+							if(systemservice) {
+
+								if(retry.state) {
+									systemservice->deactivate(retry.state);
+								}
+
+								retry.state = make_shared<SQLState>(count());
+
+								systemservice->activate(retry.state);
+
+							}
+
+						}
+
+
+						// Schedule next retry.
+						cout << "Scheduling retry to " << TimeStamp(time(0)+(retry.interval /1000)) << endl;
+						MainLoop::getInstance().reset(this,retry.interval);
 						busy = false;
 					});
 				}
@@ -94,13 +166,35 @@
 
 		}
 
+		if(pending && *pending) {
+
+			try {
+
+				uint64_t pending_messages = count();
+
+				if(!pending_messages) {
+					info() << "No pending requests" << endl;
+				} else if(pending_messages == 1) {
+					warning() << "1 pending request" << endl;
+				} else {
+					warning() << pending_messages << " pending requests" << endl;
+				}
+
+			} catch(const std::exception &e) {
+
+				error() << "Error '" << e.what() << "' counting pending requests" << endl;
+
+			}
+
+		}
+
 	}
 
 	SQLite::Protocol::~Protocol() {
 		MainLoop::getInstance().remove(this);
 	}
 
-	void SQLite::Protocol::send() const noexcept {
+	void SQLite::Protocol::send() const {
 
 		Statement del(this->del);
 		Statement select(this->select);
@@ -108,48 +202,33 @@
 
 		while(select.step() == SQLITE_ROW && mainloop) {
 
-			try {
+			int64_t id;
+			Udjat::URL url;
+			string action, payload;
 
-				int64_t id;
-				Udjat::URL url;
-				string action, payload;
+			select.get(0,id);
+			select.get(1,url);
+			select.get(2,action);
+			select.get(3,payload);
 
-				select.get(0,id);
-				select.get(1,url);
-				select.get(2,action);
-				select.get(3,payload);
+			info() << "Sending " << action << " " << url << " (" << id << ")" << endl << payload << endl;
 
-				info() << "Sending " << action << " " << url << " (" << id << ")" << endl << payload << endl;
+			HTTP::Client client(url);
 
-				HTTP::Client client(url);
-
-				switch(HTTP::MethodFactory(action.c_str())) {
-				case HTTP::Get:
-					cout << client.get() << endl;
-					break;
-				case HTTP::Post:
-					cout << client.post(payload.c_str()) << endl;
-					break;
-
-				default:
-					error() << "Unexpected verb '" << action << "' sending queued request, ignoring" << endl;
-				}
-
-				info() << "Removing request '" << id << "' from URL queue" << endl;
-				del.bind(1,id).exec();
-
-
-			} catch(const std::exception &e) {
-
-				warning() << "Error '" << e.what() << "' while senting queued requests" << endl;
+			switch(HTTP::MethodFactory(action.c_str())) {
+			case HTTP::Get:
+				cout << client.get() << endl;
+				break;
+			case HTTP::Post:
+				cout << client.post(payload.c_str()) << endl;
 				break;
 
-			} catch(...) {
-
-				warning() << "Unexpected error while senting queued requests" << endl;
-				break;
-
+			default:
+				error() << "Unexpected verb '" << action << "' sending queued request, ignoring" << endl;
 			}
+
+			info() << "Removing request '" << id << "' from URL queue" << endl;
+			del.bind(1,id).exec();
 
 			del.reset();
 			select.reset();
@@ -180,9 +259,9 @@
 
 			String get(const std::function<bool(double current, double total)> &progress) override {
 
-#ifdef DEBUG
-				cout << "Inserting " << method() << " '" << url() << "'" << endl;
-#endif // DEBUG
+//#ifdef DEBUG
+//				cout << "Inserting " << method() << " '" << url() << "'" << endl;
+//#endif // DEBUG
 
 				progress(0,0);
 
