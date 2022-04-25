@@ -141,13 +141,15 @@
 
 		send();
 
-		//
-		// Get queue size, update value if necessary
-		//
-		int64_t new_value = count();
-		if(new_value != value) {
-			value = new_value;
-			return updated(true);
+		if(pending && *pending) {
+			//
+			// Get queue size, update value if necessary
+			//
+			int64_t new_value = count();
+			if(new_value != value) {
+				value = new_value;
+				return updated(true);
+			}
 		}
 
 		return updated(false);
@@ -241,8 +243,7 @@
 
 				stmt.exec();
 
-				// Reset timer.
-				MainLoop::getInstance().reset(protocol,100);
+				const_cast<Protocol *>(protocol)->refresh();
 
 				// Force as complete.
 				progress(1,1);
