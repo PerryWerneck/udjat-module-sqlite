@@ -68,6 +68,8 @@
 
 	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo),Abstract::Agent(node), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
 
+		load(node);
+
 		if(!updatetimer()) {
 			warning() << "No update timer" << endl;
 		}
@@ -109,7 +111,7 @@
 
 			} else if(value == 1) {
 
-				state = make_shared<Abstract::State>("pending", Level::ready, "One pending request in the output queue");
+				state = make_shared<Abstract::State>("pending", Level::warning, "One pending request in the output queue");
 
 			} else {
 
@@ -139,7 +141,19 @@
 
 	bool SQLite::Protocol::refresh() {
 
-		send();
+#ifdef DEBUG
+		info() << "------------------------ " << __FUNCTION__ << "(" << __LINE__ << ") ------------------------------" << endl;
+#endif // DEBUG
+
+		try {
+
+			send();
+
+		} catch(const std::exception &e) {
+
+			error() << e.what() << endl;
+
+		}
 
 		if(pending && *pending) {
 			//
@@ -148,11 +162,12 @@
 			int64_t new_value = count();
 			if(new_value != value) {
 				value = new_value;
-				return updated(true);
+				return true;
 			}
 		}
 
-		return updated(false);
+		return false;
+
 	}
 
 	void SQLite::Protocol::send() const {
@@ -243,7 +258,7 @@
 
 				stmt.exec();
 
-				const_cast<Protocol *>(protocol)->refresh();
+				const_cast<Protocol *>(protocol)->requestRefresh();
 
 				// Force as complete.
 				progress(1,1);
