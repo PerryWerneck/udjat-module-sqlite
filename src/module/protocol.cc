@@ -170,6 +170,7 @@
 #ifdef DEBUG
 				info() << "** Queue count has changed to " << value << endl;
 #endif // DEBUG
+				activate(stateFromValue());
 				return true;
 			}
 #ifdef DEBUG
@@ -178,7 +179,13 @@
 			}
 #endif // DEBUG
 		}
+#ifdef DEBUG
+		else {
+			info() << "** No queue count SQL" << endl;
+		}
 
+		info() << "------------------------ " << __FUNCTION__ << "(" << __LINE__ << ") ------------------------------" << endl;
+#endif // DEBUG
 		return false;
 
 	}
