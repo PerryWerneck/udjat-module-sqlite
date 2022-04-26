@@ -66,6 +66,11 @@
 		return pending_messages;
 	}
 
+	Udjat::Value & SQLite::Protocol::get(Udjat::Value &value) const {
+		value.set(this->value);
+		return value;
+	}
+
 	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo),Abstract::Agent(node), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
 
 		load(node);
@@ -162,8 +167,16 @@
 			int64_t new_value = count();
 			if(new_value != value) {
 				value = new_value;
+#ifdef DEBUG
+				info() << "** Queue count has changed to " << value << endl;
+#endif // DEBUG
 				return true;
 			}
+#ifdef DEBUG
+			else {
+				info() << "** Queue count has not changed (" << value << ")" << endl;
+			}
+#endif // DEBUG
 		}
 
 		return false;

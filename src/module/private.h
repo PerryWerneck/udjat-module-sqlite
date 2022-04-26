@@ -27,6 +27,7 @@
  #include <udjat/sqlite/sql.h>
  #include <udjat/tools/protocol.h>
  #include <udjat/state.h>
+ #include <udjat/agent.h>
  #include <string>
  #include <list>
  #include <udjat/moduleinfo.h>
@@ -54,10 +55,10 @@
 		class UDJAT_PRIVATE Protocol : public Udjat::Protocol, public Abstract::Agent {
 		private:
 			int64_t value = 0;
-			const char *ins;
-			const char *del;
-			const char *select;
-			const char *pending;
+			const char *ins = nullptr;
+			const char *del = nullptr;
+			const char *select = nullptr;
+			const char *pending = nullptr;
 
 			bool busy = false;
 
@@ -79,6 +80,8 @@
 			Protocol(const pugi::xml_node &node);
 			virtual ~Protocol();
 
+			Udjat::Value & get(Udjat::Value &value) const override;
+
 			std::shared_ptr<Protocol::Worker> WorkerFactory() const override;
 
 			inline std::ostream & info() const {
@@ -93,11 +96,6 @@
 				return Object::NamedObject::error();
 			}
 
-			/*
-			inline const char * name() const {
-				return Object::NamedObject::name();
-			}
-			*/
 
 		};
 
