@@ -66,91 +66,20 @@
 		return pending_messages;
 	}
 
-	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
+	Udjat::Value & SQLite::Protocol::get(Udjat::Value &value) const {
+		value.set(this->value);
+		return value;
+	}
 
-		retry.delay = Object::getAttribute(node, "sqlite", "retry-delay", (unsigned int) retry.delay);
-		retry.interval = Object::getAttribute(node, "sqlite", "retry-interval", (unsigned int) retry.interval) * 1000;
-		retry.when_busy = Object::getAttribute(node, "sqlite", "retry-when-busy", (unsigned int) retry.when_busy) * 1000;
-		retry.notify = Object::getAttribute(node, "sqlite", "notify", pending && *pending);
+	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo),Abstract::Agent(node), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
 
-		if(retry.interval) {
+		load(node);
 
-			Udjat::Protocol::info() << "URL retry timer set to " << (retry.interval/1000) << " seconds" << endl;
-
-			MainLoop::getInstance().insert(this, retry.interval, [this]() {
-
-				MainLoop::getInstance().reset(this,retry.when_busy);
-				if(!busy) {
-					busy = true;
-					ThreadPool::getInstance().push([this](){
-
-						try {
-
-							send();
-
-						} catch(const std::exception &e) {
-
-							warning() << "Error '" << e.what() << "' while sending queued requests" << endl;
-
-						} catch(...) {
-
-							warning() << "Unexpected error while sending queued requests" << endl;
-
-						}
-
-						// Do we need to change state?
-						if(retry.notify && pending && *pending) {
-
-							class SQLState : public Udjat::State<int64_t> {
-							private:
-								string msg;
-
-							public:
-								SQLState(int64_t value) : Udjat::State<int64_t>("SQLite",value,Level::ready) {
-
-									if(value == 0) {
-										msg = "No pending messages";
-									} else if(value == 1) {
-										msg = "1 pending message";
-									} else {
-										msg = std::to_string(value);
-										msg += " pending messages";
-									}
-
-									Object::properties.summary = msg.c_str();
-
-								}
-							};
-
-							auto systemservice = SystemService::getInstance();
-
-							if(systemservice) {
-
-								if(retry.state) {
-									systemservice->deactivate(retry.state);
-								}
-
-								retry.state = make_shared<SQLState>(count());
-
-								systemservice->activate(retry.state);
-
-							}
-
-						}
-
-
-						// Schedule next retry.
-						cout << "Scheduling retry to " << TimeStamp(time(0)+(retry.interval /1000)) << endl;
-						MainLoop::getInstance().reset(this,retry.interval);
-						busy = false;
-					});
-				}
-
-				return true;
-
-			});
-
+		if(!updatetimer()) {
+			warning() << "No update timer" << endl;
 		}
+
+		send_delay = Object::getAttribute(node, "sqlite", "retry-delay", (unsigned int) send_delay);
 
 		for(pugi::xml_node child = node.child("init"); child; child = child.next_sibling("init")) {
 
@@ -166,32 +95,99 @@
 
 		}
 
-		if(pending && *pending) {
-
-			try {
-
-				uint64_t pending_messages = count();
-
-				if(!pending_messages) {
-					info() << "No pending requests" << endl;
-				} else if(pending_messages == 1) {
-					warning() << "1 pending request" << endl;
-				} else {
-					warning() << pending_messages << " pending requests" << endl;
-				}
-
-			} catch(const std::exception &e) {
-
-				error() << "Error '" << e.what() << "' counting pending requests" << endl;
-
-			}
-
-		}
-
 	}
 
 	SQLite::Protocol::~Protocol() {
 		MainLoop::getInstance().remove(this);
+	}
+
+	std::shared_ptr<Abstract::State> SQLite::Protocol::stateFromValue() const {
+
+		if(pending && *pending) {
+
+			//
+			// Create default states.
+			//
+			std::shared_ptr<Abstract::State> state;
+
+			if(!value) {
+
+				state = make_shared<Abstract::State>("empty", Level::unimportant, "Output queue is empty");
+
+			} else if(value == 1) {
+
+				state = make_shared<Abstract::State>("pending", Level::warning, "One pending request in the output queue");
+
+			} else {
+
+				class State : public Abstract::State {
+				private:
+					std::string message;
+
+				public:
+					State(uint64_t val) : Abstract::State("pending",Level::warning) {
+						message = std::to_string(val) + " pending requests in the output queue";
+						Object::properties.summary = message.c_str();
+					}
+				};
+
+				state = make_shared<State>(value);
+
+			}
+
+			info() << state->summary() << endl;
+
+			return state;
+
+		}
+
+		return Abstract::Agent::stateFromValue();
+	}
+
+	bool SQLite::Protocol::refresh() {
+
+#ifdef DEBUG
+		info() << "------------------------ " << __FUNCTION__ << "(" << __LINE__ << ") ------------------------------" << endl;
+#endif // DEBUG
+
+		try {
+
+			send();
+
+		} catch(const std::exception &e) {
+
+			error() << e.what() << endl;
+
+		}
+
+		if(pending && *pending) {
+			//
+			// Get queue size, update value if necessary
+			//
+			int64_t new_value = count();
+			if(new_value != value) {
+				value = new_value;
+#ifdef DEBUG
+				info() << "** Queue count has changed to " << value << endl;
+#endif // DEBUG
+				activate(stateFromValue());
+				return true;
+			}
+#ifdef DEBUG
+			else {
+				info() << "** Queue count has not changed (" << value << ")" << endl;
+			}
+#endif // DEBUG
+		}
+#ifdef DEBUG
+		else {
+			info() << "** No queue count SQL" << endl;
+		}
+
+		info() << "------------------------ " << __FUNCTION__ << "(" << __LINE__ << ") ------------------------------" << endl;
+#endif // DEBUG
+		return false;
+
 	}
 
 	void SQLite::Protocol::send() const {
@@ -234,9 +230,9 @@
 			select.reset();
 
 #ifdef _WIN32
-			Sleep(retry.delay * 100);
+			Sleep(send_delay * 100);
 #else
-			sleep(retry.delay);
+			sleep(send_delay);
 #endif // _WIN32
 
 		}
@@ -282,8 +278,7 @@
 
 				stmt.exec();
 
-				// Reset timer.
-				MainLoop::getInstance().reset(protocol,100);
+				const_cast<Protocol *>(protocol)->requestRefresh();
 
 				// Force as complete.
 				progress(1,1);

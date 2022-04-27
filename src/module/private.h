@@ -27,6 +27,7 @@
  #include <udjat/sqlite/sql.h>
  #include <udjat/tools/protocol.h>
  #include <udjat/state.h>
+ #include <udjat/agent.h>
  #include <string>
  #include <list>
  #include <udjat/moduleinfo.h>
@@ -40,47 +41,29 @@
 
 			static const ModuleInfo moduleinfo;
 
-			class DynamicWorker {
-			public:
-				constexpr DynamicWorker() {
-				}
-
-				virtual ~DynamicWorker() {
-				}
-
-			};
-
-		private:
-
-			std::list<DynamicWorker *> workers;
-			void push_back(DynamicWorker *worker) const;
-
 		public:
 			Module();
 			Module(const pugi::xml_node &node);
 			virtual ~Module();
 
+			std::shared_ptr<Abstract::Agent> AgentFactory(const Abstract::Object &parent, const pugi::xml_node &node) const;
+
 			bool push_back(const pugi::xml_node &node) const override;
+
 		};
 
-		class UDJAT_PRIVATE Protocol : public Udjat::Protocol, public Module::DynamicWorker {
+		class UDJAT_PRIVATE Protocol : public Udjat::Protocol, public Abstract::Agent {
 		private:
-			const char *ins;
-			const char *del;
-			const char *select;
-			const char *pending;
+			int64_t value = 0;
+			const char *ins = nullptr;
+			const char *del = nullptr;
+			const char *select = nullptr;
+			const char *pending = nullptr;
 
 			bool busy = false;
 
-			struct {
-				time_t interval = 86400;
-				time_t delay = 1;
-				time_t when_busy = 14400;
-				bool notify = false;
-				std::shared_ptr<Abstract::State> state;
-			} retry;
-
-			time_t retry_delay = 1;
+			/// @brief Interval between URL send.
+			time_t send_delay = 1;
 
 			/// @brief Sending queued URLs.
 			void send() const;
@@ -88,11 +71,31 @@
 			/// @brief Count pending requests.
 			int64_t count() const;
 
+		protected:
+
+			std::shared_ptr<Abstract::State> stateFromValue() const override;
+			bool refresh() override;
+
 		public:
 			Protocol(const pugi::xml_node &node);
 			virtual ~Protocol();
 
+			Udjat::Value & get(Udjat::Value &value) const override;
+
 			std::shared_ptr<Protocol::Worker> WorkerFactory() const override;
+
+			inline std::ostream & info() const {
+				return Object::NamedObject::info();
+			}
+
+			inline std::ostream & warning() const {
+				return Object::NamedObject::warning();
+			}
+
+			inline std::ostream & error() const {
+				return Object::NamedObject::error();
+			}
+
 
 		};
 
