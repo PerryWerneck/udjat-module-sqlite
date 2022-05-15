@@ -26,7 +26,6 @@
  #include <udjat/sqlite/database.h>
  #include <udjat/sqlite/sql.h>
  #include <udjat/tools/protocol.h>
- #include <udjat/state.h>
  #include <udjat/agent.h>
  #include <string>
  #include <list>
