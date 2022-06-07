@@ -47,7 +47,7 @@
 
 			std::shared_ptr<Abstract::Agent> AgentFactory(const Abstract::Object &parent, const pugi::xml_node &node) const;
 
-			bool push_back(const pugi::xml_node &node) const override;
+			bool push_back(const pugi::xml_node &node) override;
 
 		};
 

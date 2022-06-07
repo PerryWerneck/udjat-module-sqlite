@@ -74,7 +74,7 @@
 	}
 
 
-	bool SQLite::Module::push_back(const pugi::xml_node &node) const {
+	bool SQLite::Module::push_back(const pugi::xml_node &node) {
 
 		const char *type = node.attribute("type").as_string();
 		if(!(type && *type)) {
