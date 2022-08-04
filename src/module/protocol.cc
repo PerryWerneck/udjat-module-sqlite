@@ -75,7 +75,7 @@
 
 		load(node);
 
-		if(!updatetimer()) {
+		if(!timer()) {
 			warning() << "No update timer" << endl;
 		}
 
