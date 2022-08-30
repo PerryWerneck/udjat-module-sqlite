@@ -73,8 +73,6 @@
 
 	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo),Abstract::Agent(node), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
 
-		load(node);
-
 		if(!timer()) {
 			warning() << "No update timer" << endl;
 		}
