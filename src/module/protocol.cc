@@ -276,7 +276,9 @@
 
 				stmt.exec();
 
-				const_cast<Protocol *>(protocol)->requestRefresh();
+				if(MainLoop::getInstance()) {
+					const_cast<Protocol *>(protocol)->requestRefresh();
+				}
 
 				// Force as complete.
 				progress(1,1);

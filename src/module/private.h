@@ -45,7 +45,7 @@
 			Module(const pugi::xml_node &node);
 			virtual ~Module();
 
-			std::shared_ptr<Abstract::Agent> AgentFactory(const Abstract::Object &parent, const pugi::xml_node &node) const;
+			std::shared_ptr<Abstract::Agent> AgentFactory(const Abstract::Object &parent, const XML::Node &node) const;
 
 			bool push_back(const pugi::xml_node &node) override;
 
@@ -53,6 +53,7 @@
 
 		class UDJAT_PRIVATE Protocol : public Udjat::Protocol, public Abstract::Agent {
 		private:
+
 			int64_t value = 0;
 			const char *ins = nullptr;
 			const char *del = nullptr;

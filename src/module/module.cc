@@ -74,14 +74,9 @@
 	}
 
 
-	bool SQLite::Module::push_back(const pugi::xml_node &node) {
+	bool SQLite::Module::push_back(const XML::Node &node) {
 
-		const char *type = node.attribute("type").as_string();
-		if(!(type && *type)) {
-			throw runtime_error("The required 'type' attribute is not available");
-		}
-
-		if(!strcasecmp(type,"init")) {
+		if(String{node,"type"} == "init") {
 			//
 			// Execute SQL on initialization.
 			//
@@ -91,20 +86,16 @@
 
 			Database::getInstance().exec(sql.c_str());
 			return true;
+
 		}
 
 		return false;
 
 	}
 
-	std::shared_ptr<Abstract::Agent> SQLite::Module::AgentFactory(const Abstract::Object &parent, const pugi::xml_node &node) const {
+	std::shared_ptr<Abstract::Agent> SQLite::Module::AgentFactory(const Abstract::Object &parent, const XML::Node &node) const {
 
-		const char *type = node.attribute("type").as_string();
-		if(!(type && *type)) {
-			throw runtime_error("The required 'type' attribute is not available");
-		}
-
-		if(!strcasecmp(type,"url-scheme")) {
+		if(String{node,"type"} == "url-scheme") {
 			//
 			// Register SQL as protocol handler and queue status agent.
 			//
