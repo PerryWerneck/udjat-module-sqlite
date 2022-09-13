@@ -26,7 +26,6 @@
  #include <udjat/sqlite/database.h>
  #include <udjat/sqlite/statement.h>
  #include <udjat/tools/mainloop.h>
- #include <udjat/tools/threadpool.h>
  #include <udjat/tools/timestamp.h>
  #include <udjat/tools/systemservice.h>
  #include <string>
@@ -96,6 +95,7 @@
 	}
 
 	SQLite::Protocol::~Protocol() {
+		info() << "Disabling protocol handler" << endl;
 		MainLoop::getInstance().remove(this);
 	}
 
@@ -276,7 +276,7 @@
 
 				stmt.exec();
 
-				if(Udjat::Protocol::verify(protocol)) {
+				if(Udjat::Protocol::verify(protocol) && MainLoop::getInstance()) {
 #ifdef DEBUG
 					cout << "Requesting refresh of protocol " << hex << ((void *) protocol) << dec << endl;
 #endif // DEBUG
