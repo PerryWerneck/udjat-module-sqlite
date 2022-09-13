@@ -41,7 +41,7 @@
 			time_t send_delay = 1;
 
 			/// @brief Sending queued URLs.
-			void send() const;
+			void send();
 
 		public:
 			Protocol(const pugi::xml_node &node);

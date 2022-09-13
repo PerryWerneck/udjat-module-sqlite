@@ -112,14 +112,14 @@
 			}
 
 			//
-			// @brief Proxy for protocol handler.
+			// @brief Agent interface for protocol.
 			//
-			class Proxy : public Abstract::Agent {
+			class Agent : public Abstract::Agent {
 			private:
 				shared_ptr<Protocol> protocol;
 
 			public:
-				Proxy(shared_ptr<Protocol> p, const XML::Node &node) : Abstract::Agent(node), protocol(p) {
+				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Abstract::Agent(node), protocol(p) {
 
 					if(!timer()) {
 						warning() << "No update timer" << endl;
@@ -144,7 +144,7 @@
 
 			};
 
-			return make_shared<Proxy>(protocol,node);
+			return make_shared<Agent>(protocol,node);
 		}
 
 		return Udjat::Factory::AgentFactory(parent,node);

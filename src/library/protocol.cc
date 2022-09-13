@@ -165,11 +165,21 @@
 
 	}
 
-	void SQLite::Protocol::send() const {
+	void SQLite::Protocol::send() {
 
 #ifdef DEBUG
 		info() << __FUNCTION__ << "() starts ---------------------------------------" << endl;
 #endif // DEBUG
+
+		static mutex guard;
+
+		{
+			lock_guard<mutex> lock(guard);
+			if(busy) {
+				return;
+			}
+			busy = true;
+		}
 
 		try {
 
@@ -239,6 +249,10 @@
 
 		}
 
+		{
+			lock_guard<mutex> lock(guard);
+			busy = false;
+		}
 #ifdef DEBUG
 		info() << __FUNCTION__ << "() finishes ---------------------------------------" << endl;
 #endif // DEBUG
