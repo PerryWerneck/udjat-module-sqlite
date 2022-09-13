@@ -276,9 +276,17 @@
 
 				stmt.exec();
 
-				if(MainLoop::getInstance()) {
+				if(Udjat::Protocol::verify(protocol)) {
+#ifdef DEBUG
+					cout << "Requesting refresh of protocol " << hex << ((void *) protocol) << dec << endl;
+#endif // DEBUG
 					const_cast<Protocol *>(protocol)->requestRefresh();
 				}
+#ifdef DEBUG
+				else {
+					cout << "** Protocol " << hex << ((void *) protocol) << dec << " is no longer available" << endl;
+				}
+#endif // DEBUG
 
 				// Force as complete.
 				progress(1,1);
