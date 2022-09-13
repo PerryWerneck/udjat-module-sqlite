@@ -30,6 +30,7 @@
  #include <udjat/tools/timestamp.h>
  #include <udjat/tools/systemservice.h>
  #include <udjat/tools/logger.h>
+ #include <udjat/tools/threadpool.h>
  #include <udjat/tools/intl.h>
  #include <string>
 
@@ -96,7 +97,10 @@
 	}
 
 	SQLite::Protocol::~Protocol() {
-		info() << "Disabling protocol handler" << endl;
+		if(busy) {
+			ThreadPool::getInstance().wait();
+		}
+		info() << "Disabling " << (busy ? "an active" : "inactive") << " protocol handler" << endl;
 	}
 
 	std::shared_ptr<Abstract::State> SQLite::Protocol::state() const {
@@ -297,6 +301,15 @@
 				);
 
 				stmt.exec();
+
+				if(MainLoop::getInstance()) {
+					Protocol *protocol = const_cast<Protocol *>(this->protocol);
+					ThreadPool::getInstance().push([protocol]() {
+						if(Udjat::Protocol::verify(protocol)) {
+							protocol->send();
+						}
+					});
+				}
 
 				// Force as complete.
 				progress(1,1);
