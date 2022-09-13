@@ -95,11 +95,56 @@
 
 	std::shared_ptr<Abstract::Agent> SQLite::Module::AgentFactory(const Abstract::Object &parent, const XML::Node &node) const {
 
-		if(String{node,"type"} == "url-scheme") {
+		String type{node,"type"};
+
+		if( type == "url-scheme" || type == "url-queue") {
 			//
 			// Register SQL as protocol handler and queue status agent.
 			//
-			return make_shared<SQLite::Protocol>(node);
+			auto protocol = make_shared<Protocol>(node);
+
+			{
+				SQLite::Module * module = const_cast<SQLite::Module *>(this);
+				if(!module) {
+					throw runtime_error("Cant cast module as volatile");
+				}
+				module->protocols.push_back(protocol);
+			}
+
+			//
+			// @brief Proxy for protocol handler.
+			//
+			class Proxy : public Abstract::Agent {
+			private:
+				shared_ptr<Protocol> protocol;
+
+			public:
+				Proxy(shared_ptr<Protocol> p, const XML::Node &node) : Abstract::Agent(node), protocol(p) {
+
+					if(!timer()) {
+						warning() << "No update timer" << endl;
+					}
+
+				}
+
+				Udjat::Value & get(Udjat::Value &value) const {
+					value.set(protocol->count());
+					return value;
+				}
+
+				bool refresh() override {
+					protocol->retry();
+					return true;
+				}
+
+				std::shared_ptr<Abstract::State> stateFromValue() const override {
+					return protocol->state();
+				}
+
+
+			};
+
+			return make_shared<Proxy>(protocol,node);
 		}
 
 		return Udjat::Factory::AgentFactory(parent,node);

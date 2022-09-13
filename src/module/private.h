@@ -25,10 +25,11 @@
  #include <udjat/factory.h>
  #include <udjat/sqlite/database.h>
  #include <udjat/sqlite/sql.h>
- #include <udjat/tools/protocol.h>
+ #include <udjat/sqlite/protocol.h>
  #include <udjat/agent.h>
  #include <string>
  #include <list>
+ #include <vector>
  #include <udjat/moduleinfo.h>
 
  namespace Udjat {
@@ -40,6 +41,9 @@
 
 			static const ModuleInfo moduleinfo;
 
+			// List of active protocols.
+			std::vector<std::shared_ptr<Protocol>> protocols;
+
 		public:
 			Module();
 			Module(const pugi::xml_node &node);
@@ -48,54 +52,6 @@
 			std::shared_ptr<Abstract::Agent> AgentFactory(const Abstract::Object &parent, const XML::Node &node) const;
 
 			bool push_back(const pugi::xml_node &node) override;
-
-		};
-
-		class UDJAT_PRIVATE Protocol : public Udjat::Protocol, public Abstract::Agent {
-		private:
-
-			int64_t value = 0;
-			const char *ins = nullptr;
-			const char *del = nullptr;
-			const char *select = nullptr;
-			const char *pending = nullptr;
-
-			bool busy = false;
-
-			/// @brief Interval between URL send.
-			time_t send_delay = 1;
-
-			/// @brief Sending queued URLs.
-			void send() const;
-
-			/// @brief Count pending requests.
-			int64_t count() const;
-
-		protected:
-
-			std::shared_ptr<Abstract::State> stateFromValue() const override;
-			bool refresh() override;
-
-		public:
-			Protocol(const pugi::xml_node &node);
-			virtual ~Protocol();
-
-			Udjat::Value & get(Udjat::Value &value) const override;
-
-			std::shared_ptr<Protocol::Worker> WorkerFactory() const override;
-
-			inline std::ostream & info() const {
-				return Object::NamedObject::info();
-			}
-
-			inline std::ostream & warning() const {
-				return Object::NamedObject::warning();
-			}
-
-			inline std::ostream & error() const {
-				return Object::NamedObject::error();
-			}
-
 
 		};
 

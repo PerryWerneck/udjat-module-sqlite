@@ -25,16 +25,17 @@
  #include <udjat/moduleinfo.h>
  #include <udjat/sqlite/database.h>
  #include <udjat/sqlite/statement.h>
+ #include <udjat/sqlite/protocol.h>
  #include <udjat/tools/mainloop.h>
  #include <udjat/tools/timestamp.h>
  #include <udjat/tools/systemservice.h>
+ #include <udjat/tools/logger.h>
+ #include <udjat/tools/intl.h>
  #include <string>
 
 #ifndef _WIN32
 	#include <unistd.h>
 #endif // _WIN32
-
- #include "private.h"
 
  using namespace std;
 
@@ -65,16 +66,16 @@
 		return pending_messages;
 	}
 
+	/*
 	Udjat::Value & SQLite::Protocol::get(Udjat::Value &value) const {
 		value.set(this->value);
 		return value;
 	}
+	*/
 
-	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),SQLite::Module::moduleinfo),Abstract::Agent(node), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
+	static const Udjat::ModuleInfo moduleinfo{"SQLite " SQLITE_VERSION " custom protocol module"};
 
-		if(!timer()) {
-			warning() << "No update timer" << endl;
-		}
+	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
 
 		send_delay = Object::getAttribute(node, "sqlite", "retry-delay", (unsigned int) send_delay);
 
@@ -96,10 +97,9 @@
 
 	SQLite::Protocol::~Protocol() {
 		info() << "Disabling protocol handler" << endl;
-		MainLoop::getInstance().remove(this);
 	}
 
-	std::shared_ptr<Abstract::State> SQLite::Protocol::stateFromValue() const {
+	std::shared_ptr<Abstract::State> SQLite::Protocol::state() const {
 
 		if(pending && *pending) {
 
@@ -110,11 +110,11 @@
 
 			if(!value) {
 
-				state = make_shared<Abstract::State>("empty", Level::unimportant, "Output queue is empty");
+				state = make_shared<Abstract::State>("empty", Level::unimportant, _( "Output queue is empty" ) );
 
 			} else if(value == 1) {
 
-				state = make_shared<Abstract::State>("pending", Level::warning, "One pending request in the output queue");
+				state = make_shared<Abstract::State>("pending", Level::warning, _( "One pending request in the output queue") );
 
 			} else {
 
@@ -124,7 +124,7 @@
 
 				public:
 					State(uint64_t val) : Abstract::State("pending",Level::warning) {
-						message = std::to_string(val) + " pending requests in the output queue";
+						message = Logger::Message( _( "{} pending requests in the output queue" ), val);
 						Object::properties.summary = message.c_str();
 					}
 				};
@@ -139,10 +139,10 @@
 
 		}
 
-		return Abstract::Agent::stateFromValue();
+		return make_shared<Abstract::State>("none", Level::unimportant, _( "No pending requests") );
 	}
 
-	bool SQLite::Protocol::refresh() {
+	bool SQLite::Protocol::retry() {
 
 #ifdef DEBUG
 		info() << "------------------------ " << __FUNCTION__ << "(" << __LINE__ << ") ------------------------------" << endl;
@@ -158,30 +158,7 @@
 
 		}
 
-		if(pending && *pending) {
-			//
-			// Get queue size, update value if necessary
-			//
-			int64_t new_value = count();
-			if(new_value != value) {
-				value = new_value;
 #ifdef DEBUG
-				info() << "** Queue count has changed to " << value << endl;
-#endif // DEBUG
-				activate(stateFromValue());
-				return true;
-			}
-#ifdef DEBUG
-			else {
-				info() << "** Queue count has not changed (" << value << ")" << endl;
-			}
-#endif // DEBUG
-		}
-#ifdef DEBUG
-		else {
-			info() << "** No queue count SQL" << endl;
-		}
-
 		info() << "------------------------ " << __FUNCTION__ << "(" << __LINE__ << ") ------------------------------" << endl;
 #endif // DEBUG
 		return false;
@@ -190,50 +167,81 @@
 
 	void SQLite::Protocol::send() const {
 
-		Statement del(this->del);
-		Statement select(this->select);
-		MainLoop &mainloop = MainLoop::getInstance();
+#ifdef DEBUG
+		info() << __FUNCTION__ << "() starts ---------------------------------------" << endl;
+#endif // DEBUG
 
-		while(select.step() == SQLITE_ROW && mainloop) {
+		try {
 
-			int64_t id;
-			Udjat::URL url;
-			string action, payload;
+			Statement del(this->del);
+			Statement select(this->select);
+			MainLoop &mainloop = MainLoop::getInstance();
 
-			select.get(0,id);
-			select.get(1,url);
-			select.get(2,action);
-			select.get(3,payload);
+			while(select.step() == SQLITE_ROW && mainloop && Protocol::verify(this)) {
 
-			info() << "Sending " << action << " " << url << " (" << id << ")" << endl << payload << endl;
+				int64_t id;
+				Udjat::URL url;
+				string action, payload;
 
-			HTTP::Client client(url);
+				select.get(0,id);
+				select.get(1,url);
+				select.get(2,action);
+				select.get(3,payload);
 
-			switch(HTTP::MethodFactory(action.c_str())) {
-			case HTTP::Get:
-				cout << client.get() << endl;
-				break;
-			case HTTP::Post:
-				cout << client.post(payload.c_str()) << endl;
-				break;
+				info() << "Sending " << action << " " << url << " (" << id << ")" << endl << payload << endl;
 
-			default:
-				error() << "Unexpected verb '" << action << "' sending queued request, ignoring" << endl;
-			}
+				HTTP::Client client(url);
 
-			info() << "Removing request '" << id << "' from URL queue" << endl;
-			del.bind(1,id).exec();
+				switch(HTTP::MethodFactory(action.c_str())) {
+				case HTTP::Get:
+					{
+						auto response = client.get();
+						info() << url << response << endl;
+					}
+					break;
 
-			del.reset();
-			select.reset();
+				case HTTP::Post:
+					{
+						auto response = client.post(payload.c_str());
+						info() << url << response << endl;
+					}
+					break;
+
+				default:
+					error() << "Unexpected verb '" << action << "' sending queued request, ignoring" << endl;
+				}
+
+				info() << "Removing request '" << id << "' from URL queue" << endl;
+				del.bind(1,id).exec();
+
+				del.reset();
+				select.reset();
+
+#ifdef DEBUG
+					info() << "----------> Waiting for " << send_delay << " seconds" << endl;
+#endif // DEBUG
 
 #ifdef _WIN32
-			Sleep(send_delay * 100);
+				Sleep(send_delay * 100);
 #else
-			sleep(send_delay);
+				sleep(send_delay);
 #endif // _WIN32
 
+			}
+
+		} catch(const std::exception &e) {
+
+			warning() << "Error sending queued message: " << e.what() << endl;
+
+		} catch(...) {
+
+			warning() << "Unexpected error sending queued messages" << endl;
+
 		}
+
+#ifdef DEBUG
+		info() << __FUNCTION__ << "() finishes ---------------------------------------" << endl;
+#endif // DEBUG
 
 	}
 
@@ -275,18 +283,6 @@
 				);
 
 				stmt.exec();
-
-				if(Udjat::Protocol::verify(protocol) && MainLoop::getInstance()) {
-#ifdef DEBUG
-					cout << "Requesting refresh of protocol " << hex << ((void *) protocol) << dec << endl;
-#endif // DEBUG
-					const_cast<Protocol *>(protocol)->requestRefresh();
-				}
-#ifdef DEBUG
-				else {
-					cout << "** Protocol " << hex << ((void *) protocol) << dec << " is no longer available" << endl;
-				}
-#endif // DEBUG
 
 				// Force as complete.
 				progress(1,1);

@@ -34,9 +34,11 @@
 		</Compiler>
 		<Unit filename="src/include/config.h" />
 		<Unit filename="src/include/udjat/sqlite/database.h" />
+		<Unit filename="src/include/udjat/sqlite/protocol.h" />
 		<Unit filename="src/include/udjat/sqlite/sql.h" />
 		<Unit filename="src/include/udjat/sqlite/statement.h" />
 		<Unit filename="src/library/database.cc" />
+		<Unit filename="src/library/protocol.cc" />
 		<Unit filename="src/library/sql.cc" />
 		<Unit filename="src/library/statement.cc" />
 		<Unit filename="src/module/init.cc" />
