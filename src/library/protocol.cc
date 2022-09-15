@@ -98,6 +98,7 @@
 
 	SQLite::Protocol::~Protocol() {
 		if(busy) {
+			info() << "Waiting for workers" << endl;
 			ThreadPool::getInstance().wait();
 		}
 		info() << "Disabling " << (busy ? "an active" : "inactive") << " protocol handler" << endl;
@@ -304,7 +305,7 @@
 
 				if(MainLoop::getInstance()) {
 					Protocol *protocol = const_cast<Protocol *>(this->protocol);
-					ThreadPool::getInstance().push([protocol]() {
+					ThreadPool::getInstance().push("sqlite-worker",[protocol]() {
 						if(Udjat::Protocol::verify(protocol)) {
 							protocol->send();
 						}
