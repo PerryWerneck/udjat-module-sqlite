@@ -160,6 +160,16 @@ install: \
 		$(BINRLS)/$(PACKAGE_NAME)@LIBEXT@ \
 		$(DESTDIR)@MODULE_PATH@/$(PACKAGE_NAME)@LIBEXT@
 
+install-debug: \
+	$(BINDBG)/$(PACKAGE_NAME)@LIBEXT@
+
+	@$(MKDIR) \
+		$(DESTDIR)@MODULE_PATH@
+
+	@$(INSTALL_PROGRAM) \
+		$(BINDBG)/$(PACKAGE_NAME)@LIBEXT@ \
+		$(DESTDIR)@MODULE_PATH@/$(PACKAGE_NAME)@LIBEXT@
+
 	
 #---[ Uninstall Targets ]----------------------------------------------------------------
 
