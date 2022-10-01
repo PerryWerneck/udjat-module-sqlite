@@ -150,7 +150,7 @@
 	bool SQLite::Protocol::retry() {
 
 #ifdef DEBUG
-		info() << "------------------------ " << __FUNCTION__ << "(" << __LINE__ << ") ------------------------------" << endl;
+		trace(__FUNCTION__);
 #endif // DEBUG
 
 		try {
@@ -164,7 +164,7 @@
 		}
 
 #ifdef DEBUG
-		info() << "------------------------ " << __FUNCTION__ << "(" << __LINE__ << ") ------------------------------" << endl;
+		trace(__FUNCTION__);
 #endif // DEBUG
 		return false;
 
@@ -173,7 +173,7 @@
 	void SQLite::Protocol::send() {
 
 #ifdef DEBUG
-		info() << __FUNCTION__ << "() starts ---------------------------------------" << endl;
+		trace(__FUNCTION__," start");
 #endif // DEBUG
 
 		static mutex guard;
@@ -233,7 +233,7 @@
 				select.reset();
 
 #ifdef DEBUG
-					info() << "----------> Waiting for " << send_delay << " seconds" << endl;
+				trace("Waiting for ",send_delay," seconds");
 #endif // DEBUG
 
 #ifdef _WIN32
@@ -259,7 +259,7 @@
 			busy = false;
 		}
 #ifdef DEBUG
-		info() << __FUNCTION__ << "() finishes ---------------------------------------" << endl;
+		trace(__FUNCTION__," finishes");
 #endif // DEBUG
 
 	}

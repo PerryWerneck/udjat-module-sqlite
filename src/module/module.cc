@@ -20,6 +20,7 @@
  #include <config.h>
  #include "private.h"
  #include <pugixml.hpp>
+ #include <udjat/agent.h>
  #include <udjat/tools/object.h>
  #include <udjat/tools/string.h>
  #include <udjat/tools/configuration.h>
@@ -27,6 +28,7 @@
  #include <udjat/tools/object.h>
  #include <udjat/sqlite/database.h>
  #include <udjat/tools/quark.h>
+ #include <udjat/tools/logger.h>
  #include <udjat/module.h>
  #include <udjat/sqlite/sql.h>
 
@@ -121,8 +123,13 @@
 			public:
 				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Abstract::Agent(node), protocol(p) {
 
-					if(!timer()) {
-						warning() << "No update timer" << endl;
+					setup(node);
+
+					auto seconds = timer();
+					if(!seconds) {
+						warning() << "No update-timer attribute, timed retry will not work" << endl;
+					} else {
+						info() << "Retry timer set to " << seconds << " seconds" << endl;
 					}
 
 				}
