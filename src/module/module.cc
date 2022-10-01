@@ -122,8 +122,11 @@
 
 			public:
 				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Abstract::Agent(node), protocol(p) {
+				}
 
-					setup(node);
+				void setup(const pugi::xml_node &node) override {
+
+					Abstract::Agent::setup(node);
 
 					auto seconds = timer();
 					if(!seconds) {
