@@ -36,6 +36,7 @@
 
  namespace Udjat {
 
+	/*
 	/// @brief Get attribute from configuration file.
 	static String getAttribute(const char *name, const char *def) {
 		return String{Config::Value<string>("sql",name,def)};
@@ -49,6 +50,7 @@
 		}
 		return getAttribute(name,def).expand(node);
 	}
+	*/
 
 	/// @brief Create module from configuration file.
 	const Udjat::ModuleInfo SQLite::Module::moduleinfo{"SQLite " SQLITE_VERSION " module"};
@@ -57,9 +59,9 @@
 
 		// Open SQLite database
 #ifdef DEBUG
-		open(Application::DataFile(getAttribute("dbname","./sqlite.db").c_str()).c_str());
+		open(Application::DataFile(Config::Value<string>("sql","dbname","./sqlite.db").c_str(),true).c_str());
 #else
-		open(Application::DataFile(getAttribute("dbname","sqlite.db").c_str()).c_str());
+		open(Application::DataFile(Config::Value<string>("sql","dbname","sqlite.db").c_str(),true).c_str());
 #endif // DEBUG
 
 	}
@@ -68,7 +70,7 @@
 	SQLite::Module::Module(const pugi::xml_node &node) : Udjat::Module("sqlite",moduleinfo), Udjat::Factory("sql",moduleinfo) {
 
 		// Open SQLite database
-		open(Application::DataFile(getAttribute(node,"dbname","sqlite.db").c_str()).c_str());
+		open(Application::DataFile(node,"dbname",true).c_str());
 
 	}
 

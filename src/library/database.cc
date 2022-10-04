@@ -20,6 +20,7 @@
  #include <config.h>
  #include <udjat/defs.h>
  #include <udjat/sqlite/database.h>
+ #include <udjat/tools/logger.h>
  #include <iostream>
 
  using namespace std;
@@ -59,12 +60,12 @@
 			throw runtime_error("Database is already open");
 		}
 
-		cout << "sqlite\tUsing database on '" << dbname << "'" << endl;
+		cout << "sqlite\tOpening database on '" << dbname << "'" << endl;
 
 		// Open database.
 		int rc = sqlite3_open(dbname, &db);
 		if(rc != SQLITE_OK) {
-			throw runtime_error(string{"Error opening '"} + dbname + "'");
+			throw runtime_error(Logger::String("Error opening '",dbname,"'"));
         }
 
 	}
