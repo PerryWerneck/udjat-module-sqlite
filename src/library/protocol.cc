@@ -203,7 +203,8 @@
 				select.get(2,action);
 				select.get(3,payload);
 
-				info() << "Sending " << action << " " << url << " (" << id << ")" << endl << payload << endl;
+				info() << "Sending " << action << " " << url << " (" << id << ")" << endl;
+				Logger::write(Logger::Trace,payload);
 
 				HTTP::Client client(url);
 
@@ -211,14 +212,15 @@
 				case HTTP::Get:
 					{
 						auto response = client.get();
-						info() << url << response << endl;
+						info() << url << endl;
+						Logger::write(Logger::Trace,response);
 					}
 					break;
 
 				case HTTP::Post:
 					{
 						auto response = client.post(payload.c_str());
-						info() << url << response << endl;
+						Logger::write(Logger::Trace,response);
 					}
 					break;
 
