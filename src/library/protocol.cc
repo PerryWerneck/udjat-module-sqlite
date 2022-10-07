@@ -121,6 +121,17 @@
 
 		if(pending && *pending) {
 
+			/// @brief Message based state.
+			class StringState : public Abstract::State {
+			private:
+				std::string message;
+
+			public:
+				StringState(const char *name, Level level, const Logger::Message &msg) : Abstract::State(name,level), message{msg} {
+					Object::properties.summary = message.c_str();
+				}
+			};
+
 			//
 			// Create default states.
 			//
@@ -131,40 +142,27 @@
 
 			if(!value) {
 
-				state = make_shared<Abstract::State>(
+				state = make_shared<StringState>(
 								"empty",
 								Level::unimportant,
-								Logger::Message( _("{} output queue is empty"), name ).c_str()
+								Logger::Message( _("{} output queue is empty"), name )
 							);
 
 			} else if(value == 1) {
 
-				state = make_shared<Abstract::State>(
+				state = make_shared<StringState>(
 								"pending",
 								Level::warning,
-								Logger::Message( _( "One pending request in the {} queue"), name ).c_str()
+								Logger::Message( _("One pending request in the {} queue"), name )
 							);
 
 			} else {
 
-				class State : public Abstract::State {
-				private:
-					Logger::Message message;
-
-				public:
-					State(const char *name, uint64_t val) :
-						Abstract::State("pending",Level::warning),
-						message{
-							_( "{} pending requests in the {} queue" ),
-							val,
-							name
-						}
-					{
-						Object::properties.summary = message.c_str();
-					}
-				};
-
-				state = make_shared<State>(name,value);
+				state = make_shared<StringState>(
+								"pending",
+								Level::warning,
+								Logger::Message( _("{} pending requests in the {} queue"), value, name )
+							);
 
 			}
 
