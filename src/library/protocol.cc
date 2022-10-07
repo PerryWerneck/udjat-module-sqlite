@@ -67,13 +67,6 @@
 		return pending_messages;
 	}
 
-	/*
-	Udjat::Value & SQLite::Protocol::get(Udjat::Value &value) const {
-		value.set(this->value);
-		return value;
-	}
-	*/
-
 	static const Udjat::ModuleInfo moduleinfo{"SQLite " SQLITE_VERSION " custom protocol module"};
 
 	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
@@ -86,9 +79,7 @@
 			sql.strip();
 			sql.expand(child);
 
-#ifdef DEBUG
-			cout << sql << endl;
-#endif // DEBUG
+			debug(sql.c_str());
 
 			Database::getInstance().exec(sql.c_str());
 
@@ -112,6 +103,8 @@
 			// Create default states.
 			//
 			std::shared_ptr<Abstract::State> state;
+
+			auto value = count();
 
 			if(!value) {
 
@@ -147,41 +140,19 @@
 		return make_shared<Abstract::State>("none", Level::unimportant, _( "No pending requests") );
 	}
 
-	bool SQLite::Protocol::retry() {
+	size_t SQLite::Protocol::send() noexcept {
 
-#ifdef DEBUG
-		trace(__FUNCTION__);
-#endif // DEBUG
+		size_t count = 0;
 
-		try {
-
-			send();
-
-		} catch(const std::exception &e) {
-
-			error() << e.what() << endl;
-
-		}
-
-#ifdef DEBUG
-		trace(__FUNCTION__);
-#endif // DEBUG
-		return false;
-
-	}
-
-	void SQLite::Protocol::send() {
-
-#ifdef DEBUG
-		trace(__FUNCTION__," start");
-#endif // DEBUG
+		debug("start");
 
 		static mutex guard;
 
 		{
 			lock_guard<mutex> lock(guard);
 			if(busy) {
-				return;
+				debug("Worker is busy");
+				return 0;
 			}
 			busy = true;
 		}
@@ -214,6 +185,7 @@
 						auto response = client.get();
 						info() << url << endl;
 						Logger::write(Logger::Trace,response);
+						count++;
 					}
 					break;
 
@@ -221,6 +193,7 @@
 					{
 						auto response = client.post(payload.c_str());
 						Logger::write(Logger::Trace,response);
+						count++;
 					}
 					break;
 
@@ -234,9 +207,7 @@
 				del.reset();
 				select.reset();
 
-#ifdef DEBUG
-				trace("Waiting for ",send_delay," seconds");
-#endif // DEBUG
+				debug("Waiting for ",send_delay," seconds");
 
 #ifdef _WIN32
 				Sleep(send_delay * 100);
@@ -260,10 +231,10 @@
 			lock_guard<mutex> lock(guard);
 			busy = false;
 		}
-#ifdef DEBUG
-		trace(__FUNCTION__," finishes");
-#endif // DEBUG
 
+		debug("complete (count=",count,")");
+
+		return count;
 	}
 
 	std::shared_ptr<Protocol::Worker> SQLite::Protocol::WorkerFactory() const {

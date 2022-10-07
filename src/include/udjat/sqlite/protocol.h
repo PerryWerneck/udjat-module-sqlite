@@ -29,7 +29,6 @@
 		class UDJAT_API Protocol : public Udjat::Protocol {
 		private:
 
-			int64_t value = 0;
 			const char *ins = nullptr;
 			const char *del = nullptr;
 			const char *select = nullptr;
@@ -40,15 +39,13 @@
 			/// @brief Interval between URL send.
 			time_t send_delay = 1;
 
-			/// @brief Sending queued URLs.
-			void send();
-
 		public:
 			Protocol(const pugi::xml_node &node);
 			virtual ~Protocol();
 
-			/// @brief Try sending requests.
-			bool retry();
+			/// @brief Send queued URLs.
+			/// @return Number of sent URLs.
+			size_t send() noexcept;
 
 			/// @brief Count pending requests.
 			int64_t count() const;
@@ -57,20 +54,6 @@
 			std::shared_ptr<Abstract::State> state() const;
 
 			std::shared_ptr<Protocol::Worker> WorkerFactory() const override;
-
-			/*
-			inline std::ostream & info() const {
-				return Object::NamedObject::info();
-			}
-
-			inline std::ostream & warning() const {
-				return Object::NamedObject::warning();
-			}
-
-			inline std::ostream & error() const {
-				return Object::NamedObject::error();
-			}
-			*/
 
 		};
 

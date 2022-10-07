@@ -118,12 +118,12 @@
 			//
 			// @brief Agent interface for protocol.
 			//
-			class Agent : public Abstract::Agent {
+			class Agent : public Udjat::Agent<size_t> {
 			private:
 				shared_ptr<Protocol> protocol;
 
 			public:
-				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Abstract::Agent(node), protocol(p) {
+				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Udjat::Agent<size_t>(node), protocol(p) {
 				}
 
 				void setup(const pugi::xml_node &node) override {
@@ -132,27 +132,32 @@
 
 					auto seconds = timer();
 					if(!seconds) {
-						warning() << "No update-timer attribute, timed retry will not work" << endl;
+						seconds = Config::Value<time_t>("sqlite","refresh-timer",600);
+						warning() << "No update-timer, using default value of " << seconds << " seconds" << endl;
+						timer(seconds);
 					} else {
 						info() << "Retry timer set to " << seconds << " seconds" << endl;
 					}
 
 				}
 
-				Udjat::Value & get(Udjat::Value &value) const {
-					value.set(protocol->count());
-					return value;
+				void start() override {
+					set(protocol->count());
 				}
 
 				bool refresh() override {
-					protocol->retry();
+					if(protocol->send()) {
+						set(protocol->count());
+					}
 					return true;
 				}
 
 				std::shared_ptr<Abstract::State> stateFromValue() const override {
-					return protocol->state();
+					if(states.empty()) {
+						return protocol->state();
+					}
+					return Udjat::Agent<size_t>::stateFromValue();
 				}
-
 
 			};
 
