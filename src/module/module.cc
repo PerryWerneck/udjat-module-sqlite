@@ -161,10 +161,16 @@
 				}
 
 				std::shared_ptr<Abstract::State> stateFromValue() const override {
-					if(states.empty()) {
-						return protocol->state();
+
+					unsigned int value = Udjat::Agent<unsigned int>::get();
+
+					for(auto state : states) {
+						if(state->compare(value))
+							return state;
 					}
-					return Udjat::Agent<unsigned int>::stateFromValue();
+
+					return protocol->state();
+
 				}
 
 			};
