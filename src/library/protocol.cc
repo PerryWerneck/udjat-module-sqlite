@@ -111,10 +111,13 @@
 	}
 
 	void SQLite::Protocol::refresh() {
+		time_t delay = (busy ? 60 : 0);
+
 		lock_guard<mutex> lock(guard);
 		for(auto listener : listeners) {
-			listener->requestRefresh(0);
+			listener->requestRefresh(delay);
 		}
+
 	}
 
 	std::shared_ptr<Abstract::State> SQLite::Protocol::state() const {
