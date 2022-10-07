@@ -204,7 +204,7 @@
 				select.get(3,payload);
 
 				info() << "Sending " << action << " " << url << " (" << id << ")" << endl;
-				Logger::write(Logger::Trace,payload);
+				Logger::write(Logger::Trace,Protocol::c_str(),payload.c_str());
 
 				HTTP::Client client(url);
 
