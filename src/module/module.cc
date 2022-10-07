@@ -123,7 +123,7 @@
 				shared_ptr<Protocol> protocol;
 
 			public:
-				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Udjat::Agent<size_t>(node), protocol(p) {
+				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Udjat::Agent<unsigned long>(node), protocol(p) {
 				}
 
 				void setup(const pugi::xml_node &node) override {
