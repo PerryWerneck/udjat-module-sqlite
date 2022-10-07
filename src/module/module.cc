@@ -118,12 +118,17 @@
 			//
 			// @brief Agent interface for protocol.
 			//
-			class Agent : public Udjat::Agent<size_t> {
+			class Agent : public Udjat::Agent<unsigned int> {
 			private:
 				shared_ptr<Protocol> protocol;
 
 			public:
-				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Udjat::Agent<unsigned long>(node), protocol(p) {
+				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Udjat::Agent<unsigned int>(node), protocol(p) {
+					protocol->insert(this);
+				}
+
+				virtual ~Agent() {
+					protocol->remove(this);
 				}
 
 				void setup(const pugi::xml_node &node) override {
@@ -141,14 +146,17 @@
 
 				}
 
+				void get(const Request UDJAT_UNUSED(&request), Report &report) override {
+					protocol->get(report);
+				}
+
 				void start() override {
 					set(protocol->count());
 				}
 
 				bool refresh() override {
-					if(protocol->send()) {
-						set(protocol->count());
-					}
+					protocol->send();
+					set((unsigned int) protocol->count());
 					return true;
 				}
 
@@ -156,7 +164,7 @@
 					if(states.empty()) {
 						return protocol->state();
 					}
-					return Udjat::Agent<size_t>::stateFromValue();
+					return Udjat::Agent<unsigned int>::stateFromValue();
 				}
 
 			};

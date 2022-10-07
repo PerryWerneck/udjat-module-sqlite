@@ -69,7 +69,12 @@
 
 	static const Udjat::ModuleInfo moduleinfo{"SQLite " SQLITE_VERSION " custom protocol module"};
 
-	SQLite::Protocol::Protocol(const pugi::xml_node &node) : Udjat::Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo), ins(child_value(node,"insert")), del(child_value(node,"delete")), select(child_value(node,"select")), pending(child_value(node,"pending",false)) {
+	SQLite::Protocol::Protocol(const pugi::xml_node &node) :
+		Udjat::Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo),
+		ins(child_value(node,"insert")), del(child_value(node,"delete")),
+		select(child_value(node,"select")),
+		list(child_value(node,"report",false)),
+		pending(child_value(node,"pending",false)) {
 
 		send_delay = Object::getAttribute(node, "sqlite", "retry-delay", (unsigned int) send_delay);
 
@@ -95,6 +100,23 @@
 		info() << "Disabling " << (busy ? "an active" : "inactive") << " protocol handler" << endl;
 	}
 
+	void SQLite::Protocol::insert(Abstract::Agent *listener) {
+		lock_guard<mutex> lock(guard);
+		listeners.push_back(listener);
+	}
+
+	void SQLite::Protocol::remove(Abstract::Agent *listener) {
+		lock_guard<mutex> lock(guard);
+		listeners.remove(listener);
+	}
+
+	void SQLite::Protocol::refresh() {
+		lock_guard<mutex> lock(guard);
+		for(auto listener : listeners) {
+			listener->requestRefresh(0);
+		}
+	}
+
 	std::shared_ptr<Abstract::State> SQLite::Protocol::state() const {
 
 		if(pending && *pending) {
@@ -105,29 +127,44 @@
 			std::shared_ptr<Abstract::State> state;
 
 			auto value = count();
+			const char * name = Protocol::c_str();
 
 			if(!value) {
 
-				state = make_shared<Abstract::State>("empty", Level::unimportant, _( "Output queue is empty" ) );
+				state = make_shared<Abstract::State>(
+								"empty",
+								Level::unimportant,
+								Logger::Message( _("{} output queue is empty"), name ).c_str()
+							);
 
 			} else if(value == 1) {
 
-				state = make_shared<Abstract::State>("pending", Level::warning, _( "One pending request in the output queue") );
+				state = make_shared<Abstract::State>(
+								"pending",
+								Level::warning,
+								Logger::Message( _( "One pending request in the {} queue"), name ).c_str()
+							);
 
 			} else {
 
 				class State : public Abstract::State {
 				private:
-					std::string message;
+					Logger::Message message;
 
 				public:
-					State(uint64_t val) : Abstract::State("pending",Level::warning) {
-						message = Logger::Message( _( "{} pending requests in the output queue" ), val);
+					State(const char *name, uint64_t val) :
+						Abstract::State("pending",Level::warning),
+						message{
+							_( "{} pending requests in the {} queue" ),
+							val,
+							name
+						}
+					{
 						Object::properties.summary = message.c_str();
 					}
 				};
 
-				state = make_shared<State>(value);
+				state = make_shared<State>(name,value);
 
 			}
 
@@ -276,6 +313,16 @@
 
 				stmt.exec();
 
+				{
+					Protocol *prot = const_cast<Protocol *>(this->protocol);
+					if(prot) {
+						prot->refresh();
+					}
+				}
+
+				/*
+
+				-- No longer needed, the agent refresh trigerred by 'protocol->refresh' will take care --
 				if(MainLoop::getInstance()) {
 					Protocol *protocol = const_cast<Protocol *>(this->protocol);
 					ThreadPool::getInstance().push("sqlite-worker",[protocol]() {
@@ -284,6 +331,8 @@
 						}
 					});
 				}
+
+				*/
 
 				// Force as complete.
 				progress(1,1);
@@ -295,6 +344,14 @@
 		return make_shared<Worker>(this,ins);
 	}
 
+	void SQLite::Protocol::get(Report &report) {
+
+		if(!list[0]) {
+			throw system_error(ENOENT,system_category(),_( "No available report in this path" ));
+		}
+
+		throw system_error(ENOTSUP,system_category(),_( "Not implemented" ));
+	}
 
  }
 

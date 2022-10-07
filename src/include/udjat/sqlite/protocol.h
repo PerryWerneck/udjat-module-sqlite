@@ -21,6 +21,8 @@
 
  #include <udjat/defs.h>
  #include <udjat/tools/protocol.h>
+ #include <list>
+ #include <mutex>
 
  namespace Udjat {
 
@@ -32,12 +34,17 @@
 			const char *ins = nullptr;
 			const char *del = nullptr;
 			const char *select = nullptr;
+			const char *list = nullptr;
 			const char *pending = nullptr;
 
 			bool busy = false;
 
+			std::mutex guard;
+
 			/// @brief Interval between URL send.
 			time_t send_delay = 1;
+
+			std::list<Abstract::Agent *> listeners;
 
 		public:
 			Protocol(const pugi::xml_node &node);
@@ -49,6 +56,18 @@
 
 			/// @brief Count pending requests.
 			int64_t count() const;
+
+			/// @brief Insert listener agent.
+			void insert(Abstract::Agent *listener);
+
+			/// @brief Remove listener agent.
+			void remove(Abstract::Agent *listener);
+
+			/// @brief Refresh listeners.
+			void refresh();
+
+			/// @brief Get queue.
+			void get(Report &report);
 
 			/// @brief Get State based on queue size.
 			std::shared_ptr<Abstract::State> state() const;
