@@ -27,55 +27,30 @@
 
  namespace Udjat {
 
-	SQLite::Database * SQLite::Database::instance = nullptr;
-
-	SQLite::Database::Database() {
-		lock_guard<std::mutex> lock(guard);
-		if(!instance) {
-			instance = this;
-		}
-	}
-
-	SQLite::Database::~Database() {
-		{
-			lock_guard<std::mutex> lock(guard);
-			if(instance == this) {
-				instance = nullptr;
-			}
-		}
-		close();
-	}
-
-	SQLite::Database & SQLite::Database::getInstance() {
-		if(!instance) {
-			throw runtime_error("No available database instance");
-		}
-		return *instance;
-	}
-
-	void SQLite::Database::open(const char *dbname) {
+	SQLite::Database::Database(const char *dbname) {
 
 		lock_guard<std::mutex> lock(guard);
-		if(db) {
-			throw runtime_error("Database is already open");
-		}
 
 		cout << "sqlite\tOpening database on '" << dbname << "'" << endl;
 
 		// Open database.
 		int rc = sqlite3_open(dbname, &db);
 		if(rc != SQLITE_OK) {
+			db = nullptr;
 			throw runtime_error(Logger::String("Error opening '",dbname,"'"));
         }
 
 	}
 
-	void SQLite::Database::close() {
+	SQLite::Database::~Database() {
+
+		debug("Closing database");
 
 		lock_guard<std::mutex> lock(guard);
 		if(db) {
 			switch(sqlite3_close(db)) {
 			case SQLITE_OK:
+					cout << "sqlite\tClosing database with NO unfinished operations" << endl;
 					break;
 
 			case SQLITE_BUSY:
@@ -89,7 +64,6 @@
 			db = nullptr;
 
 		}
-
 	}
 
 	void SQLite::Database::exec(const char *sql) {

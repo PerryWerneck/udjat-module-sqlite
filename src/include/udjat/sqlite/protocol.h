@@ -31,6 +31,8 @@
 		class UDJAT_API Protocol : public Udjat::Protocol {
 		private:
 
+			std::shared_ptr<Database> database;
+
 			const char *ins = nullptr;
 			const char *del = nullptr;
 			const char *select = nullptr;
@@ -47,7 +49,7 @@
 			std::list<Abstract::Agent *> listeners;
 
 		public:
-			Protocol(const pugi::xml_node &node);
+			Protocol(std::shared_ptr<Database> db, const pugi::xml_node &node);
 			virtual ~Protocol();
 
 			/// @brief Send queued URLs.
