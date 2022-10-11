@@ -28,15 +28,15 @@
 
  namespace Udjat {
 
- 	SQLite::Statement::Statement(const char *sql) : database(Database::getInstance()) {
+ 	SQLite::Statement::Statement(std::shared_ptr<Database> db, const char *sql) : database(db) {
 
- 		if(!database.db) {
+ 		if(!database->db) {
 			throw runtime_error("Database is not available");
 		}
 
-		lock_guard<std::mutex> lock(database.guard);
-		database.check(sqlite3_prepare_v2(
-			database.db,		// Database handle
+		lock_guard<std::mutex> lock(database->guard);
+		database->check(sqlite3_prepare_v2(
+			database->db,		// Database handle
 			sql,				// SQL statement, UTF-8 encoded
 			-1,					// Maximum length of zSql in bytes.
 			&stmt,				// OUT: Statement handle
@@ -46,31 +46,31 @@
  	}
 
  	SQLite::Statement::~Statement() {
-		lock_guard<std::mutex> lock(database.guard);
+		lock_guard<std::mutex> lock(database->guard);
 		sqlite3_finalize(stmt);
  	}
 
 	void SQLite::Statement::reset() {
-		lock_guard<std::mutex> lock(database.guard);
+		lock_guard<std::mutex> lock(database->guard);
 		sqlite3_reset(stmt);
 	}
 
 	int SQLite::Statement::step() {
-		lock_guard<std::mutex> lock(database.guard);
+		lock_guard<std::mutex> lock(database->guard);
 		return sqlite3_step(stmt);
 	}
 
 	void SQLite::Statement::exec() {
-		database.check(step());
+		database->check(step());
 	}
 
 	void SQLite::Statement::get(int column, int64_t &value) {
-		lock_guard<std::mutex> lock(database.guard);
+		lock_guard<std::mutex> lock(database->guard);
 		value = sqlite3_column_int64(stmt,column);
 	}
 
 	void SQLite::Statement::get(int column, string &value) {
-		lock_guard<std::mutex> lock(database.guard);
+		lock_guard<std::mutex> lock(database->guard);
 		const char *str = (const char *) sqlite3_column_text(stmt,column);
 		if(str)
 			value = str;
@@ -79,8 +79,8 @@
 	}
 
 	SQLite::Statement & SQLite::Statement::bind(int column, const char *value) {
-		lock_guard<std::mutex> lock(database.guard);
-		database.check(
+		lock_guard<std::mutex> lock(database->guard);
+		database->check(
 			sqlite3_bind_text(
 				stmt,
 				column,
@@ -92,8 +92,8 @@
 	}
 
 	SQLite::Statement & SQLite::Statement::bind(int column, const int64_t value) {
-		lock_guard<std::mutex> lock(database.guard);
-		database.check(
+		lock_guard<std::mutex> lock(database->guard);
+		database->check(
 			sqlite3_bind_int64(
 				stmt,
 				column,
@@ -112,7 +112,7 @@
 
 			if(sqlite3_bind_text(stmt,++column,arg,strlen(arg)+1,SQLITE_TRANSIENT) != SQLITE_OK) {
 				va_end(args);
-				throw runtime_error(sqlite3_errmsg(database.db));
+				throw runtime_error(sqlite3_errmsg(database->db));
 			}
 
 			arg = va_arg(args, const char *);

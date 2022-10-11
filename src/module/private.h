@@ -36,13 +36,16 @@
 
 	namespace SQLite {
 
-		class UDJAT_PRIVATE Module : public Udjat::Module, public Udjat::Factory, private Database {
+		class UDJAT_PRIVATE Module : public Udjat::Module, public Udjat::Factory {
 		public:
 
 			static const ModuleInfo moduleinfo;
 
-			// List of active protocols.
+			// @brief List of active protocols.
 			std::vector<std::shared_ptr<Protocol>> protocols;
+
+			// @brief Module database.
+			std::shared_ptr<Database> database;
 
 		public:
 			Module();

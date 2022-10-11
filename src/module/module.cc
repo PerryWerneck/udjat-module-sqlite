@@ -55,28 +55,34 @@
 	/// @brief Create module from configuration file.
 	const Udjat::ModuleInfo SQLite::Module::moduleinfo{"SQLite " SQLITE_VERSION " module"};
 
-	SQLite::Module::Module() : Udjat::Module("sqlite",moduleinfo), Udjat::Factory("sql",moduleinfo) {
-
-		// Open SQLite database
+	std::shared_ptr<SQLite::Database> DatabaseFactory() {
 #ifdef DEBUG
-		open(Application::DataFile(Config::Value<string>("sql","dbname","./sqlite.db").c_str(),true).c_str());
+		return make_shared<SQLite::Database>(Application::DataFile(Config::Value<string>("sql","dbname","./sqlite.db").c_str(),true).c_str());
 #else
-		open(Application::DataFile(Config::Value<string>("sql","dbname","sqlite.db").c_str(),true).c_str());
+		return make_shared<SQLite::Database>(Config::Value<string>("sql","dbname","sqlite.db").c_str(),true).c_str());
 #endif // DEBUG
 
 	}
 
+	std::shared_ptr<SQLite::Database> DatabaseFactory(const pugi::xml_node &node) {
+		return make_shared<SQLite::Database>(Application::DataFile(node,"dbname",true).c_str());
+	}
+
+	SQLite::Module::Module() : Udjat::Module("sqlite",moduleinfo), Udjat::Factory("sql",moduleinfo), database(DatabaseFactory()) {
+	}
+
 	/// @brief Create module from XML definition with fallback to configuration file.
-	SQLite::Module::Module(const pugi::xml_node &node) : Udjat::Module("sqlite",moduleinfo), Udjat::Factory("sql",moduleinfo) {
-
-		// Open SQLite database
-		open(Application::DataFile(node,"dbname",true).c_str());
-
+	SQLite::Module::Module(const pugi::xml_node &node) : Udjat::Module("sqlite",moduleinfo), Udjat::Factory("sql",moduleinfo), database(DatabaseFactory(node)) {
 	}
 
 	SQLite::Module::~Module() {
+		auto count = database.use_count();
+		if(count > 2) {
+			Udjat::Factory::warning() << "Closing module with " << count << " active database instance(s) " << endl;
+		} else {
+			Udjat::Factory::info() << "Closing module with " << count << " active database instance(s) " << endl;
+		}
 	}
-
 
 	bool SQLite::Module::push_back(const XML::Node &node) {
 
@@ -87,8 +93,7 @@
 			String sql{node.child_value()};
 			sql.strip();
 			sql.expand(node);
-
-			Database::getInstance().exec(sql.c_str());
+			database->exec(sql.c_str());
 			return true;
 
 		}
@@ -105,7 +110,7 @@
 			//
 			// Register SQL as protocol handler and queue status agent.
 			//
-			auto protocol = make_shared<Protocol>(node);
+			auto protocol = make_shared<Protocol>(database,node);
 
 			{
 				SQLite::Module * module = const_cast<SQLite::Module *>(this);

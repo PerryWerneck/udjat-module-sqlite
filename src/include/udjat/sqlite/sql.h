@@ -20,6 +20,8 @@
  #pragma once
 
  #include <udjat/defs.h>
+ #include <memory>
+ #include <udjat/sqlite/database.h>
 
  namespace Udjat {
 
@@ -27,11 +29,12 @@
 
 		class UDJAT_API SQL {
 		protected:
+			std::shared_ptr<Database> database;
 			const char * query;
 			const char * args;
 
 		public:
-			SQL(const char *query, const char *args);
+			SQL(std::shared_ptr<Database> db, const char *query, const char *args);
 			~SQL();
 
 			/// @brief Execute query, no arguments.

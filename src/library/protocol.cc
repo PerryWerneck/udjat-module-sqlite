@@ -60,7 +60,7 @@
 	int64_t SQLite::Protocol::count() const {
 		int64_t pending_messages = 0;
 		if(pending && *pending) {
-			Statement sql{pending};
+			Statement sql{database,pending};
 			sql.step();
 			sql.get(0,pending_messages);
 		}
@@ -69,7 +69,8 @@
 
 	static const Udjat::ModuleInfo moduleinfo{"SQLite " SQLITE_VERSION " custom protocol module"};
 
-	SQLite::Protocol::Protocol(const pugi::xml_node &node) :
+	SQLite::Protocol::Protocol(	std::shared_ptr<Database> db, const pugi::xml_node &node) :
+		database(db),
 		Udjat::Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo),
 		ins(child_value(node,"insert")), del(child_value(node,"delete")),
 		select(child_value(node,"select")),
@@ -86,7 +87,7 @@
 
 			debug(sql.c_str());
 
-			Database::getInstance().exec(sql.c_str());
+			database->exec(sql.c_str());
 
 		}
 
@@ -197,8 +198,8 @@
 
 		try {
 
-			Statement del(this->del);
-			Statement select(this->select);
+			Statement del(database,this->del);
+			Statement select(database,this->select);
 			MainLoop &mainloop = MainLoop::getInstance();
 
 			while(select.step() == SQLITE_ROW && mainloop && Protocol::verify(this)) {
@@ -302,7 +303,7 @@
 				sql.expand(true,true);
 
 				// Prepare.
-				Statement stmt(sql.c_str());
+				Statement stmt(protocol->database,sql.c_str());
 
 				// Arguments: URL, VERB, Payload
 				stmt.bind(

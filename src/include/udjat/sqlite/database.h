@@ -22,6 +22,7 @@
  #include <udjat/defs.h>
  #include <sqlite3.h>
  #include <mutex>
+ #include <memory>
 
  namespace Udjat {
 
@@ -39,17 +40,9 @@
 
 			void check(int rc);
 
-		protected:
-			static Database * instance;
-
-			void open(const char *dbname);
-			void close();
-
 		public:
-			Database();
+			Database(const char *dbname);
 			~Database();
-
-			static Database & getInstance();
 
 			void exec(const char *sql);
 
