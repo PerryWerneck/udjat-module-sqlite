@@ -53,9 +53,9 @@
 			Protocol(std::shared_ptr<Database> db, const pugi::xml_node &node);
 			virtual ~Protocol();
 
-			/// @brief Send queued URLs.
-			/// @return Number of sent URLs.
-			size_t send() noexcept;
+			/// @brief Send one queued URL.
+			/// @return true if the first URL was sent.
+			bool send() noexcept;
 
 			/// @brief Count pending requests.
 			int64_t count() const;

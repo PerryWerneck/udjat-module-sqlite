@@ -113,6 +113,9 @@
 			private:
 				shared_ptr<Protocol> protocol;
 
+				/// @brief How many seconds to wait after a successfull send.
+				time_t wait_after_send = 2;
+
 			public:
 				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Udjat::Agent<unsigned int>(node), protocol(p) {
 					protocol->insert(this);
@@ -125,6 +128,8 @@
 				void setup(const pugi::xml_node &node) override {
 
 					Abstract::Agent::setup(node);
+
+					wait_after_send = node.attribute("wait-after-send").as_uint(wait_after_send);
 
 					auto seconds = timer();
 					if(!seconds) {
@@ -146,7 +151,17 @@
 				}
 
 				bool refresh() override {
-					protocol->send();
+
+					// If one queued URL was sent, retry in a few seconds.
+					if(protocol->send()) {
+						unsigned int count = protocol->count();
+						set(count);
+						if(count > 0) {
+							reset(time(0)+wait_after_send);
+						}
+						return true;
+					}
+
 					set((unsigned int) protocol->count());
 					return true;
 				}

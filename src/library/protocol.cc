@@ -179,11 +179,11 @@
 		return make_shared<Abstract::State>("none", Level::unimportant, _( "No pending requests") );
 	}
 
-	size_t SQLite::Protocol::send() noexcept {
+	bool SQLite::Protocol::send() noexcept {
 
-		size_t count = 0;
+		size_t success = false;
 
-		debug("start");
+		debug("start ", __FUNCTION__);
 
 		static mutex guard;
 
@@ -202,7 +202,7 @@
 			Statement select(database,this->select);
 			MainLoop &mainloop = MainLoop::getInstance();
 
-			while(select.step() == SQLITE_ROW && mainloop && Protocol::verify(this)) {
+			if(select.step() == SQLITE_ROW && mainloop && Protocol::verify(this)) {
 
 				int64_t id;
 				Udjat::URL url;
@@ -224,7 +224,7 @@
 						auto response = client.get();
 						info() << url << endl;
 						Logger::write(Logger::Trace,response);
-						count++;
+						success = true;
 					}
 					break;
 
@@ -232,12 +232,13 @@
 					{
 						auto response = client.post(payload.c_str());
 						Logger::write(Logger::Trace,response);
-						count++;
+						success = true;
 					}
 					break;
 
 				default:
 					error() << "Unexpected verb '" << action << "' sending queued request, ignoring" << endl;
+					success = false;
 				}
 
 				info() << "Removing request '" << id << "' from URL queue" << endl;
@@ -246,23 +247,18 @@
 				del.reset();
 				select.reset();
 
-				debug("Waiting for ",send_delay," seconds");
-
-#ifdef _WIN32
-				Sleep(send_delay * 100);
-#else
-				sleep(send_delay);
-#endif // _WIN32
 
 			}
 
 		} catch(const std::exception &e) {
 
 			warning() << "Error sending queued message: " << e.what() << endl;
+			success = false;
 
 		} catch(...) {
 
 			warning() << "Unexpected error sending queued messages" << endl;
+			success = false;
 
 		}
 
@@ -271,9 +267,9 @@
 			busy = false;
 		}
 
-		debug("complete (count=",count,")");
+		debug(__FUNCTION__," complete (", (success ? "Message sent" : "Message NOT sent"), ")");
 
-		return count;
+		return success;
 	}
 
 	std::shared_ptr<Protocol::Worker> SQLite::Protocol::WorkerFactory() const {
