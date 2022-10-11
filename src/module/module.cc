@@ -76,8 +76,13 @@
 	}
 
 	SQLite::Module::~Module() {
+		auto count = database.use_count();
+		if(count > 2) {
+			Udjat::Factory::warning() << "Closing module with " << count << " active database instance(s) " << endl;
+		} else {
+			Udjat::Factory::info() << "Closing module with " << count << " active database instance(s) " << endl;
+		}
 	}
-
 
 	bool SQLite::Module::push_back(const XML::Node &node) {
 
