@@ -41,11 +41,11 @@
 
 			static const ModuleInfo moduleinfo;
 
-			// @brief List of active protocols.
-			std::vector<std::shared_ptr<Protocol>> protocols;
-
 			// @brief Module database.
 			std::shared_ptr<Database> database;
+
+			// @brief List of active protocols.
+			std::vector<std::shared_ptr<Protocol>> protocols;
 
 		public:
 			Module();

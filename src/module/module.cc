@@ -36,31 +36,17 @@
 
  namespace Udjat {
 
-	/*
-	/// @brief Get attribute from configuration file.
-	static String getAttribute(const char *name, const char *def) {
-		return String{Config::Value<string>("sql",name,def)};
-	}
-
-	/// @brief Get attribute from xml with fallback to configuration file.
-	static String getAttribute(const pugi::xml_node &node, const char *name, const char *def) {
-		auto attribute = Object::getAttribute(node, name, false);
-		if(attribute) {
-			return String{attribute.as_string(def)}.expand(node);
-		}
-		return getAttribute(name,def).expand(node);
-	}
-	*/
-
 	/// @brief Create module from configuration file.
 	const Udjat::ModuleInfo SQLite::Module::moduleinfo{"SQLite " SQLITE_VERSION " module"};
 
 	std::shared_ptr<SQLite::Database> DatabaseFactory() {
 #ifdef DEBUG
-		return make_shared<SQLite::Database>(Application::DataFile(Config::Value<string>("sql","dbname","./sqlite.db").c_str(),true).c_str());
+		#define DBNAME "./sqlite.db"
 #else
-		return make_shared<SQLite::Database>(Config::Value<string>("sql","dbname","sqlite.db").c_str(),true).c_str());
+		#define DBNAME "sqlite.db"
 #endif // DEBUG
+
+		return make_shared<SQLite::Database>(Config::Value<string>("sql","dbname",DBNAME).c_str());
 
 	}
 

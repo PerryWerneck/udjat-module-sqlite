@@ -29,10 +29,11 @@
 	namespace SQLite {
 
 		class UDJAT_API Protocol : public Udjat::Protocol {
-		private:
+		protected:
 
 			std::shared_ptr<Database> database;
 
+		private:
 			const char *ins = nullptr;
 			const char *del = nullptr;
 			const char *select = nullptr;
