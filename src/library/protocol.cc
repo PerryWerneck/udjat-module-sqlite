@@ -20,6 +20,7 @@
  #include <config.h>
  #include <pugixml.hpp>
  #include <udjat/sqlite/sql.h>
+ #include <udjat/agent/abstract.h>
  #include <udjat/tools/quark.h>
  #include <udjat/tools/http/client.h>
  #include <udjat/moduleinfo.h>
@@ -116,7 +117,7 @@
 
 		lock_guard<mutex> lock(guard);
 		for(auto listener : listeners) {
-			listener->requestRefresh(delay);
+			listener->sched_update(delay);
 		}
 
 	}

@@ -148,22 +148,30 @@
 
 				void start() override {
 					set(protocol->count());
+#ifdef DEBUG
+					sched_update(5);
+#endif // DEBUG
 				}
 
 				bool refresh() override {
 
-					// If one queued URL was sent, retry in a few seconds.
 					if(protocol->send()) {
+
+						// Data was sent, if still have messages wait a few seconds.
 						unsigned int count = protocol->count();
 						set(count);
 						if(count > 0) {
-							reset(time(0)+wait_after_send);
+							sched_update(wait_after_send);
 						}
-						return true;
+
+					} else {
+
+						// No data was sent, just set value and keep the original timer.
+						set((unsigned int) protocol->count());
 					}
 
-					set((unsigned int) protocol->count());
 					return true;
+
 				}
 
 				std::shared_ptr<Abstract::State> stateFromValue() const override {
