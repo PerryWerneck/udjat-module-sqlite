@@ -125,6 +125,10 @@
 					protocol->remove(this);
 				}
 
+				void start() override {
+					Udjat::Agent<unsigned int>::start(protocol->count());
+				}
+
 				void setup(const pugi::xml_node &node) override {
 
 					Abstract::Agent::setup(node);
@@ -144,13 +148,6 @@
 
 				void get(const Request UDJAT_UNUSED(&request), Report &report) override {
 					protocol->get(report);
-				}
-
-				void start() override {
-					set(protocol->count());
-#ifdef DEBUG
-					sched_update(5);
-#endif // DEBUG
 				}
 
 				bool refresh() override {
@@ -177,6 +174,8 @@
 				std::shared_ptr<Abstract::State> stateFromValue() const override {
 
 					unsigned int value = Udjat::Agent<unsigned int>::get();
+
+					debug("value=",value);
 
 					for(auto state : states) {
 						if(state->compare(value))

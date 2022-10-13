@@ -64,6 +64,7 @@ case "$host" in
 		CXXFLAGS="$CXXFLAGS -pthread -D_WIN32_WINNT=0x0600"
 		LDFLAGS="$LDFLAGS -pthread"
 		DLL_LDFLAGS="-shared"
+		LIBS="$LIBS -lintl"
 		AC_SUBST(LIBEXT,.dll)
 		AC_SUBST(EXEEXT,.exe)
 		AC_SUBST(OSNAME,windows)
@@ -190,6 +191,8 @@ AC_PATH_TOOL([MSGMERGE], [msgmerge], [true])
 AC_PATH_TOOL([MSGFMT], [msgfmt], [true])
 
 AC_CHECK_HEADER(libintl.h, [AC_DEFINE(HAVE_LIBINTL, 1, [Libintl is available])], [AC_MSG_NOTICE([Can't find required file libintl.h])])
+AC_SUBST(INTL_LIBS)
+AC_SUBST(INTL_CFLAGS)
 
 dnl ---------------------------------------------------------------------------
 dnl test for pugixml
