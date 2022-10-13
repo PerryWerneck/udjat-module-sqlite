@@ -55,4 +55,6 @@ po
 scripts
 *.db
 *.suppression
+.pot
+vgcore.*
 
