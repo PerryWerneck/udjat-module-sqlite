@@ -113,8 +113,17 @@
 			private:
 				shared_ptr<Protocol> protocol;
 
-				/// @brief How many seconds to wait after a successfull send.
-				time_t wait_after_send = 2;
+				struct {
+					time_t success = 2;		///< @brief How many seconds to wait after a successfull send.
+					time_t failed = 14400;	///< @brief How many seconds to wait when failed.
+					time_t empty = 14400;	///< @brief How many seconds to wait when queue is empty.
+				} timers;
+
+				struct {
+					size_t count = 0;
+					size_t max = 3;
+					time_t timer = 1800;
+				} retry;
 
 			public:
 				Agent(shared_ptr<Protocol> p, const XML::Node &node) : Udjat::Agent<unsigned int>(node), protocol(p) {
@@ -133,7 +142,10 @@
 
 					Abstract::Agent::setup(node);
 
-					wait_after_send = node.attribute("wait-after-send").as_uint(wait_after_send);
+					retry.max = Object::getAttribute(node, "sqlite", "max-retries", (unsigned int) retry.max);
+					retry.timer = Object::getAttribute(node, "sqlite", "retry-timer", (unsigned int) retry.timer);
+					timers.success = Object::getAttribute(node, "sqlite", "wait-after-send", (unsigned int) timers.success);
+					timers.empty = Object::getAttribute(node, "sqlite", "update-timer", (unsigned int) timers.empty);
 
 					auto seconds = timer();
 					if(!seconds) {
@@ -144,6 +156,8 @@
 						info() << "Retry timer set to " << seconds << " seconds" << endl;
 					}
 
+					timers.failed = Object::getAttribute(node, "sqlite", "wait-after-fail", (unsigned int) timers.empty);
+
 				}
 
 				void get(const Request UDJAT_UNUSED(&request), Report &report) override {
@@ -152,19 +166,39 @@
 
 				bool refresh() override {
 
+					retry.count++;
+					trace() << "Sending pending requests (" << retry.count << "/" << retry.max << ")" << endl;
+
 					if(protocol->send()) {
 
 						// Data was sent, if still have messages wait a few seconds.
+						retry.count = 0;
 						unsigned int count = protocol->count();
 						set(count);
 						if(count > 0) {
-							sched_update(wait_after_send);
+							sched_update(timers.success);
+						} else {
+							sched_update(timers.empty);
 						}
 
 					} else {
 
 						// No data was sent, just set value and keep the original timer.
 						set((unsigned int) protocol->count());
+
+						if(retry.count >= retry.max) {
+
+							trace() << "Reach maximum number of retries, sleeping for " << timers.failed << " seconds" << endl;
+							sched_update(timers.failed);
+							retry.count = 0;
+
+						} else {
+
+							trace() << "Failed, will retry on " << retry.timer << " seconds" << endl;
+							sched_update(retry.timer);
+
+						}
+
 					}
 
 					return true;

@@ -71,12 +71,13 @@
 	static const Udjat::ModuleInfo moduleinfo{"SQLite " SQLITE_VERSION " custom protocol module"};
 
 	SQLite::Protocol::Protocol(	std::shared_ptr<Database> db, const pugi::xml_node &node) :
-		Udjat::Protocol(Quark(node,"name","sql",false).c_str(),moduleinfo),
-		database(db),
-		ins(child_value(node,"insert")), del(child_value(node,"delete")),
-		select(child_value(node,"select")),
-		list(child_value(node,"report",false)),
-		pending(child_value(node,"pending",false)) {
+		Udjat::Protocol{Quark(node,"name","sql",false).c_str(),moduleinfo},
+		database{db},
+		ins{child_value(node,"insert")},
+		del{child_value(node,"delete")},
+		select{child_value(node,"select")},
+		list{child_value(node,"report",false)},
+		pending{child_value(node,"pending",false)} {
 
 		send_delay = Object::getAttribute(node, "sqlite", "retry-delay", (unsigned int) send_delay);
 
@@ -247,7 +248,6 @@
 
 				del.reset();
 				select.reset();
-
 
 			}
 
