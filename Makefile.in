@@ -52,6 +52,8 @@ BINDIR=.bin
 BINDBG=$(BINDIR)/Debug
 BINRLS=$(BINDIR)/Release
 
+POTDIR=.pot
+
 #---[ Rules ]----------------------------------------------------------------------------
 
 DEPENDS= \
@@ -68,7 +70,7 @@ LDFLAGS=\
 	@LDFLAGS@
 
 LIBS= \
-	@LIBS@ \
+	@LIBS@ @INTL_LIBS@ \
 	@UDJAT_LIBS@ \
 	@SQL_LIBS@
 
@@ -127,10 +129,35 @@ $(OBJRLS)/%.o: \
 	@$(MKDIR) $(@D)
 	@$(WINDRES) $< -O coff -o $@
 
+#---[ Misc Rules ]-----------------------------------------------------------------------
+
+$(POTDIR)/%.pot: \
+	%.cc
+
+	@echo $(notdir $@) ...
+	@$(MKDIR) $(dir $@)
+	@$(XGETTEXT) \
+		--from-code=UTF-8 \
+		--language=C \
+		--keyword=_ \
+		--keyword=N_ \
+		--keyword=MSG_:2 \
+		--output=$@ \
+		$<
+	@touch $@
+
+$(POTDIR)/%.pot: \
+	%.rc
+
+	@echo $< ...
+	@$(MKDIR) $(dir $@)
+	@touch $@
+
 #---[ Release Targets ]------------------------------------------------------------------
 
 all: \
-	$(BINRLS)/$(PACKAGE_NAME)@LIBEXT@
+	$(BINRLS)/$(PACKAGE_NAME)@LIBEXT@ \
+	locale/$(PACKAGE_NAME).pot
 
 Release: \
 	$(BINRLS)/$(PACKAGE_NAME)@LIBEXT@
@@ -147,6 +174,16 @@ $(BINRLS)/$(PACKAGE_NAME)@LIBEXT@: \
 		$^ \
 		$(LIBS) @PUGIXML_LIBS@
 
+locale/$(PACKAGE_NAME).pot: \
+	$(foreach SRC, $(basename $(MODULE_SOURCES)), $(POTDIR)/$(SRC).pot)
+
+	@rm -f $@
+	@$(MKDIR) $(dir $@)
+	@$(MSGCAT) --sort-output $^ > $@
+
+locale: \
+	locale/$(PACKAGE_NAME).pot
+
 
 #---[ Install Targets ]------------------------------------------------------------------
 
@@ -158,6 +195,16 @@ install: \
 
 	@$(INSTALL_PROGRAM) \
 		$(BINRLS)/$(PACKAGE_NAME)@LIBEXT@ \
+		$(DESTDIR)@MODULE_PATH@/$(PACKAGE_NAME)@LIBEXT@
+
+install-debug: \
+	$(BINDBG)/$(PACKAGE_NAME)@LIBEXT@
+
+	@$(MKDIR) \
+		$(DESTDIR)@MODULE_PATH@
+
+	@$(INSTALL_PROGRAM) \
+		$(BINDBG)/$(PACKAGE_NAME)@LIBEXT@ \
 		$(DESTDIR)@MODULE_PATH@/$(PACKAGE_NAME)@LIBEXT@
 
 	

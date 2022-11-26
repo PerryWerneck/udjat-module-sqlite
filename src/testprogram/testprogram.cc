@@ -22,6 +22,7 @@
  #include <udjat/tools/systemservice.h>
  #include <udjat/tools/application.h>
  #include <udjat/tools/http/client.h>
+ #include <udjat/tools/logger.h>
  #include <udjat/agent.h>
  #include <udjat/factory.h>
  #include <udjat/module.h>
@@ -46,11 +47,13 @@ int main(int argc, char **argv) {
 
 			if(Module::find("httpd")) {
 
+				debug("http://localhost:8989");
+
 				if(Module::find("information")) {
-					cout << "http://localhost:8989/api/1.0/info/modules.xml" << endl;
-					cout << "http://localhost:8989/api/1.0/info/workers.xml" << endl;
-					cout << "http://localhost:8989/api/1.0/info/factories.xml" << endl;
-					cout << "http://localhost:8989/api/1.0/info/services.xml" << endl;
+					debug("http://localhost:8989/api/1.0/info/modules.xml");
+					debug("http://localhost:8989/api/1.0/info/workers.xml");
+					debug("http://localhost:8989/api/1.0/info/factories.xml");
+					debug("http://localhost:8989/api/1.0/info/services.xml");
 				}
 
 			}
@@ -58,8 +61,9 @@ int main(int argc, char **argv) {
 			auto root = Abstract::Agent::root();
 			if(root) {
 				for(auto agent : *root) {
-					cout << "http://localhost:8989/api/1.0/agent/" << agent->name() << ".xml" << endl;
+					debug("http://localhost:8989/api/1.0/agent/",agent->name(),".html");
 				}
+				debug("http://localhost:8989/api/1.0/report/agent/sqlite.html");
 			}
 
 			cout << "------------------------------------------------" << endl;

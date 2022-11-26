@@ -24,14 +24,14 @@
 
  namespace Udjat {
 
-	SQLite::SQL::SQL(const char *q, const char *a) : query(Quark(q).c_str()), args(Quark(a).c_str()) {
+	SQLite::SQL::SQL(std::shared_ptr<Database> db, const char *q, const char *a) : database(db), query(Quark(q).c_str()), args(Quark(a).c_str()) {
 	}
 
 	SQLite::SQL::~SQL() {
 	}
 
 	void SQLite::SQL::exec() const {
-		Database::getInstance().exec(query);
+		database->exec(query);
 	}
 
  }

@@ -49,6 +49,9 @@ AC_DEFINE_UNQUOTED(PACKAGE_MINOR_VERSION, $app_vrs_minor, [The module minor vers
 AC_SUBST(PACKAGE_MAJOR_VERSION,$app_vrs_major)
 AC_SUBST(PACKAGE_MINOR_VERSION,$app_vrs_minor)
 
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"udjat-sqlite-$app_vrs_major.$app_vrs_minor",[The gettext package name.])
+AC_SUBST(GETTEXT_PACKAGE,"udjat-sqlite-$app_vrs_major.$app_vrs_minor")
+
 dnl ---------------------------------------------------------------------------
 dnl Check for OS specifics
 dnl ---------------------------------------------------------------------------
@@ -61,6 +64,7 @@ case "$host" in
 		CXXFLAGS="$CXXFLAGS -pthread -D_WIN32_WINNT=0x0600"
 		LDFLAGS="$LDFLAGS -pthread"
 		DLL_LDFLAGS="-shared"
+		LIBS="$LIBS -lintl"
 		AC_SUBST(LIBEXT,.dll)
 		AC_SUBST(EXEEXT,.exe)
 		AC_SUBST(OSNAME,windows)
@@ -177,6 +181,20 @@ AC_DEFINE_UNQUOTED(MODULE_PATH, $app_cv_module_path, [The path for module instal
 AC_SUBST(MODULE_PATH,$app_cv_module_path)
 
 dnl ---------------------------------------------------------------------------
+dnl Check for libintl
+dnl ---------------------------------------------------------------------------
+
+AC_PATH_TOOL([XGETTEXT], [xgettext], [true])
+AC_PATH_TOOL([MSGCAT], [msgcat], [true])
+AC_PATH_TOOL([MSGINIT], [msginit], [true])
+AC_PATH_TOOL([MSGMERGE], [msgmerge], [true])
+AC_PATH_TOOL([MSGFMT], [msgfmt], [true])
+
+AC_CHECK_HEADER(libintl.h, [AC_DEFINE(HAVE_LIBINTL, 1, [Libintl is available])], [AC_MSG_NOTICE([Can't find required file libintl.h])])
+AC_SUBST(INTL_LIBS)
+AC_SUBST(INTL_CFLAGS)
+
+dnl ---------------------------------------------------------------------------
 dnl test for pugixml
 dnl ---------------------------------------------------------------------------
 
@@ -198,6 +216,7 @@ dnl Output config
 dnl ---------------------------------------------------------------------------
 
 AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(locale/Makefile)
 
 dnl ---------------------------------------------------------------------------
 dnl Output the generated config.status script.

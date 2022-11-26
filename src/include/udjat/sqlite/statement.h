@@ -30,11 +30,11 @@
 
 		class UDJAT_API Statement {
 		private:
-			Database &database;
+			std::shared_ptr<Database> database;
 			sqlite3_stmt *stmt;
 
 		public:
-			Statement(const char *sql);
+			Statement(std::shared_ptr<Database> database, const char *sql);
 			~Statement();
 
 			void reset();

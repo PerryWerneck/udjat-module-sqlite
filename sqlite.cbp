@@ -8,10 +8,11 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output=".bin/Debug/SQLite Module for libudjat" prefix_auto="1" extension_auto="1" />
+				<Option output=".bin/Debug/udjat" prefix_auto="1" extension_auto="1" />
 				<Option object_output=".obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Option parameters="--foreground" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -34,15 +35,16 @@
 		</Compiler>
 		<Unit filename="src/include/config.h" />
 		<Unit filename="src/include/udjat/sqlite/database.h" />
+		<Unit filename="src/include/udjat/sqlite/protocol.h" />
 		<Unit filename="src/include/udjat/sqlite/sql.h" />
 		<Unit filename="src/include/udjat/sqlite/statement.h" />
 		<Unit filename="src/library/database.cc" />
+		<Unit filename="src/library/protocol.cc" />
 		<Unit filename="src/library/sql.cc" />
 		<Unit filename="src/library/statement.cc" />
 		<Unit filename="src/module/init.cc" />
 		<Unit filename="src/module/module.cc" />
 		<Unit filename="src/module/private.h" />
-		<Unit filename="src/module/protocol.cc" />
 		<Unit filename="src/testprogram/testprogram.cc" />
 		<Extensions />
 	</Project>
