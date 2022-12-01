@@ -205,7 +205,7 @@
 
 				}
 
-				std::shared_ptr<Abstract::State> stateFromValue() const override {
+				std::shared_ptr<Abstract::State> computeState() override {
 
 					unsigned int value = Udjat::Agent<unsigned int>::get();
 
