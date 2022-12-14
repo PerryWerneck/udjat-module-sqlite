@@ -16,7 +16,10 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 #
 
-Summary:		SQLite module for udjat
+%define product_name %(pkg-config --variable=product_name libudjat)
+%define module_path %(pkg-config --variable=module_path libudjat)
+
+Summary:		SQLite module for %{product_name}
 Name:			udjat-module-sqlite
 Version:		1.0
 Release:		0
@@ -39,7 +42,7 @@ BuildRequires:	pkgconfig(libudjat)
 BuildRequires:	pkgconfig(sqlite3)
 
 %description
-SQLite module for udjat
+SQLite module for %{product_name}
 
 #---[ Build & Install ]-----------------------------------------------------------------------------------------------
 
@@ -58,7 +61,7 @@ make all
 %makeinstall
 
 %files
-%{_libdir}/udjat-modules/*/*.so
+%{module_path}/*.so
 
 %changelog
 
