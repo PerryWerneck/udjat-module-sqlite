@@ -289,10 +289,6 @@
 
 			String get(const std::function<bool(double current, double total)> &progress) override {
 
-//#ifdef DEBUG
-//				cout << "Inserting " << method() << " '" << url() << "'" << endl;
-//#endif // DEBUG
-
 				progress(0,0);
 
 				// Get SQL
@@ -318,20 +314,6 @@
 						prot->refresh();
 					}
 				}
-
-				/*
-
-				-- No longer needed, the agent refresh trigerred by 'protocol->refresh' will take care --
-				if(MainLoop::getInstance()) {
-					Protocol *protocol = const_cast<Protocol *>(this->protocol);
-					ThreadPool::getInstance().push("sqlite-worker",[protocol]() {
-						if(Udjat::Protocol::verify(protocol)) {
-							protocol->send();
-						}
-					});
-				}
-
-				*/
 
 				// Force as complete.
 				progress(1,1);
