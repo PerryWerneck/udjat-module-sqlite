@@ -70,7 +70,7 @@
 		}
 	}
 
-	bool SQLite::Module::push_back(const XML::Node &node) {
+	bool SQLite::Module::generic(const XML::Node &node) {
 
 		if(String{node,"type"} == "init") {
 			//
@@ -138,9 +138,9 @@
 					Udjat::Agent<unsigned int>::start(protocol->count());
 				}
 
-				void setup(const pugi::xml_node &node) override {
+				void setup(const pugi::xml_node &node, bool upsearch) override {
 
-					Abstract::Agent::setup(node);
+					Abstract::Agent::setup(node,upsearch);
 
 					retry.max = Object::getAttribute(node, "sqlite", "max-retries", (unsigned int) retry.max);
 					retry.timer = Object::getAttribute(node, "sqlite", "retry-timer", (unsigned int) retry.timer);
