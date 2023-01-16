@@ -6,7 +6,7 @@ AC_PREREQ(2.59)
 
 dnl Initialise automake with the package name, version and
 dnl bug-reporting address.
-AC_INIT([udjat-module-sqlite], [1.0], [perry.werneck@gmail.com],[udjat-module-sqlite],[https://github.com/PerryWerneck/udjat-module-sqlite])
+AC_INIT([udjat-module-sqlite], [1.1], [perry.werneck@gmail.com],[udjat-module-sqlite],[https://github.com/PerryWerneck/udjat-module-sqlite])
 
 dnl Place auxilliary scripts here.
 AC_CONFIG_AUX_DIR([scripts])
