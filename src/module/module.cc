@@ -160,8 +160,19 @@
 
 				}
 
-				void get(const Request UDJAT_UNUSED(&request), Report &report) override {
+				bool getProperties(const char *path, Report &report) const override {
+
+					if(super::getProperties(path,report)) {
+						return true;
+					}
+
+					if(*path) {
+						return false;
+					}
+
 					protocol->get(report);
+
+					return true;
 				}
 
 				bool refresh() override {
