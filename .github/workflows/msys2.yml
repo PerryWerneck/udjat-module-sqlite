@@ -1,8 +1,7 @@
 name: MSYS2
 on:
   pull_request:
-    branches:
-      - master
+    branches: [ "master", "develop" ]
 
 jobs:
   msys2-mingw:
