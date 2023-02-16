@@ -1,0 +1,19 @@
+-------------------------------------------------------------------
+Tue Nov 08 11:26:24 UTC 2022 - perry.werneck@gmail.com
+
+- Update to version 1.0+git20221107:
+  * Setting number of interval for retries from xml definition.
+  * Small fixes.
+  * Fixing sqlite agent startup.
+  * Adding base files for translation.
+  * Adding a configurable delay when sending queued messages.
+  * Trying to avoid segfault on service exit.
+  * Adding windows package definition.
+  * Fixing package build.
+  * Fixing log messages.
+  * Keeping database valid and open while there are pending operations.
+
+-------------------------------------------------------------------
+Mon Apr  4 17:59:22 UTC 2022 - Perry Werneck <perry.werneck@gmail.com>
+
+- First build on OBS 
