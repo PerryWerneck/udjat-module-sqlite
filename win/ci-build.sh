@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 # References:
 #
@@ -19,22 +19,19 @@ die ( ) {
 myDIR=$(dirname $(dirname $(readlink -f ${0})))
 cd ${myDIR}
 
-rm -fr .build
-mkdir -p  .build
-
 #
 # Build LIBUDJAT
 #
 echo "Building libudjat"
-git clone https://github.com/PerryWerneck/libudjat.git ./.build/libudjat > $LOGFILE 2>&1 || die "clone libudjat failure"
-ls -l ./.build/libudjat
-cd ./.build/libubjdat
+mkdir -p  ./.build/libudjat
+git clone https://github.com/PerryWerneck/libudjat.git ${myDIR}/.build/libudjat > $LOGFILE 2>&1 || die "clone libudjat failure"
+pushd ${myDIR}/.build/libudjat
 ./autogen.sh > $LOGFILE 2>&1 || die "Autogen failure"
 ./configure > $LOGFILE 2>&1 || die "Configure failure"
 make clean > $LOGFILE 2>&1 || die "Make clean failure"
 make all  > $LOGFILE 2>&1 || die "Make failure"
 make install  > $LOGFILE 2>&1 || die "Install failure"
-cd ../..
+popd
 
 #
 # Build

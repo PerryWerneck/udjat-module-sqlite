@@ -1,0 +1,19 @@
+Source: udjat-module-sqlite
+Section: unknown
+Priority: optional
+Maintainer: Perry Werneck <perry.werneck@gmail.com>
+Build-Depends: debhelper (>= 7), autotools-dev, autoconf, automake, pkg-config, gettext, libudjat-dev, sqlite-dev
+
+Package: udjat-module-sqlite
+Architecture: any
+Section: libs
+Depends: ${misc:Depends}
+Description: SQLite module for udja.
+ Allow storing url based alerts in a sqlite database to avoid missing then in case of a network or server failure.
+
+Package: udjat-module-sqlite-dbg
+Architecture: any
+Depends: libudjat (= ${binary:Version})
+Description: Debugging symbols for udjat-module-sqlite
+ This package contains the debugging symbols for udjat-module-sqlite.
+

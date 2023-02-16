@@ -19,7 +19,6 @@
 
  #include <config.h>
 
- #include <udjat/tools/systemservice.h>
  #include <udjat/tools/application.h>
  #include <udjat/tools/http/client.h>
  #include <udjat/tools/logger.h>
@@ -36,60 +35,12 @@
 
 int main(int argc, char **argv) {
 
-	class Service : public SystemService {
-	protected:
-		/// @brief Initialize service.
-		void init() override {
+	Logger::verbosity(9);
+	Logger::console(true);
+	Logger::redirect();
 
-			udjat_module_init();
+	udjat_module_init();
 
-			SystemService::init();
-
-			if(Module::find("httpd")) {
-
-				debug("http://localhost:8989");
-
-				if(Module::find("information")) {
-					debug("http://localhost:8989/api/1.0/info/modules.xml");
-					debug("http://localhost:8989/api/1.0/info/workers.xml");
-					debug("http://localhost:8989/api/1.0/info/factories.xml");
-					debug("http://localhost:8989/api/1.0/info/services.xml");
-				}
-
-			}
-
-			auto root = Abstract::Agent::root();
-			if(root) {
-				for(auto agent : *root) {
-					debug("http://localhost:8989/api/1.0/agent/",agent->name(),".html");
-				}
-				debug("http://localhost:8989/api/1.0/report/agent/sqlite.html");
-			}
-
-			cout << "------------------------------------------------" << endl;
-			HTTP::Client("sqlite+http://localhost").get();
-			cout << "------------------------------------------------" << endl;
-
-
-		}
-
-		/// @brief Deinitialize service.
-		void deinit() override {
-			cout << Application::Name() << "\t**** Deinitializing" << endl;
-			Udjat::Module::unload();
-		}
-
-	public:
-		Service() : SystemService{"./test.xml"} {
-		}
-
-
-	};
-
-	Service().run(argc,argv);
-
-	cout << "*** Test program finished" << endl;
-
-	return 0;
+	return Application{}.run(argc,argv,"./test.xml");
 
 }

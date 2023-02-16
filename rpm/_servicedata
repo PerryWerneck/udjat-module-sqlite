@@ -1,0 +1,4 @@
+<servicedata>
+<service name="tar_scm">
+                <param name="url">https://github.com/PerryWerneck/udjat-module-sqlite</param>
+              <param name="changesrevision">aff1bbdcb5280a6930c5fea66e6c0109e75d6512</param></service></servicedata>
