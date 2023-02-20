@@ -166,13 +166,8 @@
 						return true;
 					}
 
-					if(*path) {
-						return false;
-					}
+					return protocol->get(path,report);
 
-					protocol->get(report);
-
-					return true;
 				}
 
 				bool refresh() override {

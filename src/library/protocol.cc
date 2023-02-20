@@ -325,13 +325,10 @@
 		return make_shared<Worker>(this,ins);
 	}
 
-	void SQLite::Protocol::get(Report &report) {
-
-		if(!list[0]) {
-			throw system_error(ENOENT,system_category(),_( "No available report in this path" ));
-		}
+	bool SQLite::Protocol::get(const char *path, Report &report) {
 
 		throw system_error(ENOTSUP,system_category(),_( "Not implemented" ));
+
 	}
 
  }
