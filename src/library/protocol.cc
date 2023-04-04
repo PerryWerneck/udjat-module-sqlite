@@ -133,7 +133,7 @@
 				std::string message;
 
 			public:
-				StringState(const char *name, Level level, const Logger::Message &msg) : Abstract::State(name,level), message{msg} {
+				StringState(const char *name, Level level, const std::string &msg) : Abstract::State(name,level), message{msg} {
 					Object::properties.summary = message.c_str();
 				}
 			};
@@ -151,7 +151,7 @@
 				state = make_shared<StringState>(
 								"empty",
 								Level::unimportant,
-								Logger::Message( _("{} output queue is empty"), name )
+								Message{ _("{} output queue is empty"), name }
 							);
 
 			} else if(value == 1) {
@@ -159,7 +159,7 @@
 				state = make_shared<StringState>(
 								"pending",
 								Level::warning,
-								Logger::Message( _("One pending request in the {} queue"), name )
+								Message{ _("One pending request in the {} queue"), name }
 							);
 
 			} else {
@@ -167,7 +167,7 @@
 				state = make_shared<StringState>(
 								"pending",
 								Level::warning,
-								Logger::Message( _("{} pending requests in the {} queue"), value, name )
+								Message{ _("{} pending requests in the {} queue"), value, name }
 							);
 
 			}
@@ -325,13 +325,10 @@
 		return make_shared<Worker>(this,ins);
 	}
 
-	void SQLite::Protocol::get(Report &report) {
-
-		if(!list[0]) {
-			throw system_error(ENOENT,system_category(),_( "No available report in this path" ));
-		}
+	bool SQLite::Protocol::get(const char *path, Report &report) {
 
 		throw system_error(ENOTSUP,system_category(),_( "Not implemented" ));
+
 	}
 
  }

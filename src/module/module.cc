@@ -22,6 +22,7 @@
  #include <pugixml.hpp>
  #include <udjat/agent.h>
  #include <udjat/tools/object.h>
+ #include <udjat/agent/abstract.h>
  #include <udjat/tools/string.h>
  #include <udjat/tools/configuration.h>
  #include <udjat/tools/application.h>
@@ -166,13 +167,8 @@
 						return true;
 					}
 
-					if(*path) {
-						return false;
-					}
+					return protocol->get(path,report);
 
-					protocol->get(report);
-
-					return true;
 				}
 
 				bool refresh() override {
@@ -186,10 +182,14 @@
 						retry.count = 0;
 						unsigned int count = protocol->count();
 						set(count);
-						if(count > 0) {
-							sched_update(timers.success);
-						} else {
-							sched_update(timers.empty);
+
+						time_t timer = (count > 0 ? timers.success : timers.empty);
+
+						if(timer) {
+							time_t next = sched_update(timer);
+							if(Logger::enabled(Logger::Debug)) {
+								Logger::String{"Next try set to ",TimeStamp{next}.to_string()}.write(Logger::Debug,name());
+							}
 						}
 
 					} else {
@@ -197,18 +197,30 @@
 						// No data was sent, just set value and keep the original timer.
 						set((unsigned int) protocol->count());
 
+						time_t next;
+						Logger::Level level = Logger::Trace;
+						Logger::String message;
+
+						debug("Retry.failed=",timers.failed," Retry.success=",retry.timer);
+
 						if(retry.count >= retry.max) {
 
-							trace() << "Reach maximum number of retries, sleeping for " << timers.failed << " seconds" << endl;
-							sched_update(timers.failed);
+							message << "Reached maximum number of retries";
+							next = sched_update(timers.failed);
 							retry.count = 0;
 
 						} else {
 
-							trace() << "Failed, will retry on " << retry.timer << " seconds" << endl;
-							sched_update(retry.timer);
+							message << "Unable to send message";
+							level = Logger::Error;
+
+							next = sched_update(retry.timer);
 
 						}
+
+						message << ", will retry " << TimeStamp{next}.to_string();
+
+						message.write(level,name());
 
 					}
 

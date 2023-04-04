@@ -69,8 +69,12 @@
 			/// @brief Refresh listeners.
 			void refresh();
 
-			/// @brief Get queue.
-			void get(Report &report);
+			/// @brief Get report.
+			/// @param path The report path.
+			/// @param report The report object to get the results.
+			/// @retval true The report was found and processed.
+			/// @retval false Report not found.
+			bool get(const char *path, Report &report);
 
 			/// @brief Get State based on queue size.
 			std::shared_ptr<Abstract::State> state() const;
