@@ -57,4 +57,5 @@ scripts
 *.suppression
 .pot
 vgcore.*
+*.[0-9]
 
