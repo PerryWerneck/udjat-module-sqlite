@@ -3,9 +3,6 @@ on:
   pull_request:
     branches:
       - master
-  push:
-    branches:
-      - develop
 jobs:
   msys2-mingw:
     name: Publish for Windows 64
@@ -18,7 +15,7 @@ jobs:
       - uses: oprypin/find-latest-tag@v1
         id: gettag
         with:
-          repository: PerryWerneck/libudjat
+          repository: PerryWerneck/udjat-module-sqlite
           releases-only: true
       - uses: msys2/setup-msys2@v2
         with:
