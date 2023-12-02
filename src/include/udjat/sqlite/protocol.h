@@ -21,6 +21,7 @@
 
  #include <udjat/defs.h>
  #include <udjat/tools/protocol.h>
+ #include <udjat/tools/report.h>
  #include <list>
  #include <mutex>
 
@@ -74,7 +75,7 @@
 			/// @param report The report object to get the results.
 			/// @retval true The report was found and processed.
 			/// @retval false Report not found.
-			bool get(const char *path, Report &report);
+			bool get(const char *path, Response::Table &report);
 
 			/// @brief Get State based on queue size.
 			std::shared_ptr<Abstract::State> state() const;

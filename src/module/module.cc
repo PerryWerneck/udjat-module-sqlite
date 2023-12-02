@@ -27,6 +27,7 @@
  #include <udjat/tools/configuration.h>
  #include <udjat/tools/application.h>
  #include <udjat/tools/object.h>
+ #include <udjat/tools/report.h>
  #include <udjat/sqlite/database.h>
  #include <udjat/tools/quark.h>
  #include <udjat/tools/logger.h>
@@ -161,7 +162,7 @@
 
 				}
 
-				bool getProperties(const char *path, Report &report) const override {
+				bool getProperties(const char *path, Response::Table &report) const override {
 
 					if(super::getProperties(path,report)) {
 						return true;

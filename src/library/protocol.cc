@@ -325,7 +325,7 @@
 		return make_shared<Worker>(this,ins);
 	}
 
-	bool SQLite::Protocol::get(const char *path, Report &report) {
+	bool SQLite::Protocol::get(const char *path, Response::Table &report) {
 
 		throw system_error(ENOTSUP,system_category(),_( "Not implemented" ));
 
