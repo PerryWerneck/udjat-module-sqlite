@@ -71,7 +71,7 @@
 	static const Udjat::ModuleInfo moduleinfo{"SQLite " SQLITE_VERSION " custom protocol module"};
 
 	SQLite::Protocol::Protocol(	std::shared_ptr<Database> db, const pugi::xml_node &node) :
-		Udjat::Protocol{Quark(node,"name","sql",false).c_str(),moduleinfo},
+		Udjat::Protocol{Quark(node,"name","sql").c_str(),moduleinfo},
 		database{db},
 		ins{child_value(node,"insert")},
 		del{child_value(node,"delete")},
