@@ -140,9 +140,9 @@
 					Udjat::Agent<unsigned int>::start(protocol->count());
 				}
 
-				void setup(const pugi::xml_node &node, bool upsearch) override {
+				void setup(const pugi::xml_node &node) override {
 
-					Abstract::Agent::setup(node,upsearch);
+					Abstract::Agent::setup(node);
 
 					retry.max = Object::getAttribute(node, "sqlite", "max-retries", (unsigned int) retry.max);
 					retry.timer = Object::getAttribute(node, "sqlite", "retry-timer", (unsigned int) retry.timer);
